@@ -4,7 +4,7 @@ val Db.totalPeople
     get() = query(
         Int::class,
         """
-            return count('${Person::class.collection()}')
+            return count(`${Person::class.collection()}`)
         """
     ).first()!!
 
@@ -12,11 +12,23 @@ fun Db.invite(code: String) = one(
     Invite::class,
     """
         for x in @@collection
-            filter x.${f(Invite::code)} = @code
+            filter x.${f(Invite::code)} == @code
             return x
     """.trimIndent(),
     mapOf(
         "code" to code
+    )
+)
+
+fun Db.cardsOfPerson(person: String) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::person)} == @person
+            return x
+    """.trimIndent(),
+    mapOf(
+        "person" to person.asId(Person::class)
     )
 )
 

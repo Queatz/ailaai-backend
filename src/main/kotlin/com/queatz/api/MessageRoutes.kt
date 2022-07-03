@@ -5,7 +5,7 @@ import io.ktor.server.routing.*
 
 fun Route.messageRoutes() {
     authenticate {
-        get("/message/{id}") {
+        get("/messages/{id}") {
 
         }
     }

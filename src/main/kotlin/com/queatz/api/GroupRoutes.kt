@@ -9,7 +9,7 @@ fun Route.groupRoutes() {
 
         }
 
-        get("/group/{id}") {
+        get("/groups/{id}") {
 
         }
     }

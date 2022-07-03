@@ -7,7 +7,6 @@ import com.arangodb.mapping.ArangoJack
 import com.arangodb.model.CollectionCreateOptions
 import com.arangodb.model.DocumentCreateOptions
 import com.arangodb.model.DocumentUpdateOptions
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import kotlinx.datetime.Clock
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
@@ -17,7 +16,7 @@ class Db {
         .user("ailaai")
         .password("ailaai")
         .serializer(ArangoJack().apply {
-            configure { it.registerKotlinModule() }
+            configure { it.findAndRegisterModules() }
         })
         .build()
         .db(DbName.of("ailaai"))
@@ -48,9 +47,9 @@ class Db {
     fun <T : Model>update(model: T) = synchronized(db) { db.collection(model::class.collection()).updateDocument(model.id?.asKey(), model, DocumentUpdateOptions().returnNew(true))!!.new!! }
     fun <T : Model>delete(model: T) = synchronized(db) { db.collection(model::class.collection()).deleteDocument(model.id?.asKey())!! }
 
-    fun <T : Model> document(klass: KClass<T>, id: String) = synchronized(db) {
+    fun <T : Model> document(klass: KClass<T>, key: String) = synchronized(db) {
         try {
-            db.collection(klass.collection()).getDocument(id.asKey(), klass.java)
+            db.collection(klass.collection()).getDocument(key.asKey(), klass.java)
         } catch (e: ArangoDBException) {
             null
         }

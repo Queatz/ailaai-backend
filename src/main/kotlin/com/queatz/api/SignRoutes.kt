@@ -10,6 +10,8 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
+import kotlin.time.Duration.Companion.minutes
 
 fun Route.signRoutes() {
     post("/sign/up") {
@@ -23,6 +25,9 @@ fun Route.signRoutes() {
                 val invite = db.invite(code)
 
                 if (invite == null) {
+                    HttpStatusCode.Unauthorized
+                } else if (invite.createdAt!! < Clock.System.now().minus(5.minutes)) {
+                    db.delete(invite)
                     HttpStatusCode.Unauthorized
                 } else {
                     val person = db.insert(Person().apply {

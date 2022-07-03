@@ -1,7 +1,7 @@
 package com.queatz.db
 
 import com.arangodb.entity.From
-import com.arangodb.entity.Id
+import com.arangodb.entity.Key
 import com.arangodb.entity.To
 import com.google.gson.annotations.SerializedName
 import kotlinx.datetime.Instant
@@ -25,6 +25,7 @@ class Invite(
 class Card(
     var person: String? = null,
     var name: String? = null,
+    var photo: String? = null,
     var location: String? = null,
     var geo: List<Double>? = null,
     var conversation: String? = null,
@@ -45,7 +46,7 @@ class Message(
 ) : Model()
 
 open class Model {
-    @Id
+    @Key
     @SerializedName(value = "id", alternate = ["_id"])
     var id: String? = null
 
