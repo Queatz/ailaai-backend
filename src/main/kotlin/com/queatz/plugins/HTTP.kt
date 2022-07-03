@@ -11,7 +11,7 @@ fun Application.configureHTTP() {
         allowNonSimpleContentTypes = true
         allowMethod(HttpMethod.Options)
         allowHeader(HttpHeaders.Authorization)
-        anyHost() // TODO restrict to Android app
+        anyHost()
     }
     install(Compression)
     install(DefaultHeaders)

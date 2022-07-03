@@ -1,14 +1,10 @@
 package com.queatz.api
 
-data class SignUp(
+data class SignUpRequest(
     val code: String
 )
 
-data class SignOn(
+data class SignOnRequest(
     val email: String,
-    val password: String
-)
-
-data class SignOff(
-    val token: String
+    val code: String?
 )

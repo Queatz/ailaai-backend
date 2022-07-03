@@ -2,33 +2,53 @@ package com.queatz.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.queatz.db.Person
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.util.pipeline.*
+import java.util.*
+import java.util.concurrent.TimeUnit
+
+private val jwt = object {
+    val secret = secrets.jwt.secret
+    val issuer = "http://0.0.0.0:8080/"
+    val audience = "http://0.0.0.0:8080/"
+    val realm = "Ai La Ai"
+}
 
 fun Application.configureSecurity() {
-
-    val jwt = object {
-        val secret = "ai la ai la ai la ai"
-        val issuer = "http://0.0.0.0:8080/"
-        val audience = "http://0.0.0.0:8080/"
-        val realm = "Ai La Ai"
-    }
-
     authentication {
         jwt {
-            val jwtAudience = jwt.audience
             realm = jwt.realm
+
             verifier(
                 JWT
                     .require(Algorithm.HMAC256(jwt.secret))
-                    .withAudience(jwtAudience)
+                    .withAudience(jwt.audience)
+
                     .withIssuer(jwt.issuer)
                     .build()
             )
+
             validate { credential ->
-                if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
+                if (credential.payload.audience.contains(jwt.audience))
+                    JWTPrincipal(credential.payload)
+                else
+                    null
             }
         }
     }
 }
+
+fun jwt(id: String) = JWT.create()
+    .withAudience(jwt.audience)
+    .withIssuer(jwt.issuer)
+    .withClaim("id", id)
+    .withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(180)))
+    .sign(Algorithm.HMAC256(jwt.secret))!!
+
+val PipelineContext<*, ApplicationCall>.me
+    get() = call.principal<JWTPrincipal>()!!
+        .getClaim("id", String::class)!!
+        .let { db.document(Person::class, it) }!!

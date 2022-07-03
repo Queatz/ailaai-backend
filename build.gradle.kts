@@ -10,7 +10,8 @@ plugins {
 
 group = "com.queatz"
 version = "0.0.1"
-application {2
+
+application {
     mainClass.set("com.queatz.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
@@ -37,8 +38,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
     implementation("com.arangodb:arangodb-java-driver:6.18.0")
-    implementation("com.arangodb:velocypack:2.5.4")
-    implementation("com.arangodb:velocypack-module-jdk8:1.1.1")
+    implementation("com.arangodb:jackson-dataformat-velocypack:3.0.1")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

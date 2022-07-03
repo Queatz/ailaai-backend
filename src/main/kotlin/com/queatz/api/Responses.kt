@@ -1,5 +1,5 @@
 package com.queatz.api
 
-data class Token (
+data class TokenResponse (
     val token: String
 )

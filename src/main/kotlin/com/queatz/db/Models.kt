@@ -6,37 +6,43 @@ import com.arangodb.entity.To
 import com.google.gson.annotations.SerializedName
 import kotlinx.datetime.Instant
 
-class Person : Model() {
-    var name: String? = null
-    var photo: String? = null
+class Person(
+    var name: String? = null,
+    var photo: String? = null,
     var inviter: String? = null
-}
+) : Model()
 
-class Settings : Model() {
-    var person: String? = null
+class Settings(
+    var person: String? = null,
     var language: String? = null
-}
+) : Model()
 
-class Card : Model() {
-    var person: String? = null
-    var name: String? = null
-    var location: String? = null
-    var geo: List<Double>? = null
-    var conversation: String? = null
-}
+class Invite(
+    var person: String? = null,
+    var code: String? = null
+) : Model()
+
+class Card(
+    var person: String? = null,
+    var name: String? = null,
+    var location: String? = null,
+    var geo: List<Double>? = null,
+    var conversation: String? = null,
+    var active: Boolean? = null
+) : Model()
 
 class Group : Model()
 
-class Member : Model() {
-    val group: String? = null
+class Member(
+    val group: String? = null,
     val person: String? = null
-}
+) : Model()
 
-class Message : Model() {
-    val group: String? = null
-    val person: String? = null
+class Message(
+    val group: String? = null,
+    val member: String? = null,
     val text: String? = null
-}
+) : Model()
 
 open class Model {
     @Id
