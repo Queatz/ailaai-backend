@@ -2,7 +2,6 @@ package com.queatz.api
 
 import com.queatz.db.Invite
 import com.queatz.db.Person
-import com.queatz.db.asId
 import com.queatz.db.cardsOfPerson
 import com.queatz.plugins.db
 import com.queatz.plugins.me
@@ -46,7 +45,7 @@ fun Route.meRoutes() {
             respond {
                 db.insert(
                     Invite(
-                        person = me.id!!.asId(Person::class),
+                        person = me.id!!,
                         code = Random.code()
                     )
                 )

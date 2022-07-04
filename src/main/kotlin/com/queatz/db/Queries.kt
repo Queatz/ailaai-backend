@@ -25,10 +25,11 @@ fun Db.cardsOfPerson(person: String) = list(
     """
         for x in @@collection
             filter x.${f(Card::person)} == @person
+            sort x.${f(Card::createdAt)} desc
             return x
     """.trimIndent(),
     mapOf(
-        "person" to person.asId(Person::class)
+        "person" to person
     )
 )
 

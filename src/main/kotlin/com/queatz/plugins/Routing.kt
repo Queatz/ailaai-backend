@@ -1,14 +1,14 @@
 package com.queatz.plugins
 
 import com.queatz.api.*
-import io.ktor.server.routing.*
-import io.ktor.http.*
-import io.ktor.server.http.content.*
 import io.ktor.server.application.*
+import io.ktor.server.http.content.*
 import io.ktor.server.response.*
-import io.ktor.server.request.*
+import io.ktor.server.routing.*
 import io.ktor.util.pipeline.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 fun Application.configureRouting() {
     launch {
@@ -22,7 +22,14 @@ fun Application.configureRouting() {
         meRoutes()
         messageRoutes()
         cardRoutes()
+
+        static("/static") {
+            files("static")
+        }
     }
 }
 
-suspend inline fun <reified T : Any> PipelineContext<*, ApplicationCall>.respond(block: () -> T) = call.respond(block())
+suspend inline fun <reified T : Any> PipelineContext<*, ApplicationCall>.respond(block: () -> T) {
+    delay(Random.nextLong(500, 2500) / 10)
+    call.respond(block())
+}

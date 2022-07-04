@@ -37,3 +37,4 @@ out/
 
 ### Local ###
 /secrets.json
+/static/

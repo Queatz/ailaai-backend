@@ -1,14 +1,21 @@
 package com.queatz.api
 
-import com.queatz.db.*
+import com.queatz.db.Card
+import com.queatz.db.asKey
+import com.queatz.db.cards
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import kotlin.random.Random
 import kotlin.reflect.KMutableProperty1
 
 fun Route.cardRoutes() {
@@ -27,7 +34,7 @@ fun Route.cardRoutes() {
         post("/cards") {
             respond {
                 val person = me
-                db.insert(Card(person.id!!.asId(Person::class), person.name, active = false))
+                db.insert(Card(person.id!!, person.name, active = false))
             }
         }
 
@@ -52,7 +59,7 @@ fun Route.cardRoutes() {
 
                 if (card == null) {
                     HttpStatusCode.NotFound
-                } else if (card.person!!.asKey() != person.id) {
+                } else if (card.person != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
                     val update = call.receive<Card>()
@@ -67,6 +74,61 @@ fun Route.cardRoutes() {
                     check(Card::photo)
 
                     db.update(card)
+                }
+            }
+        }
+
+        post("/cards/{id}/photo") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.person!!.asKey() != person.id) {
+                    HttpStatusCode.Forbidden
+                } else {
+                    val parts = call.receiveMultipart().readAllParts()
+
+                    val photo = parts.find { it.name == "photo" } as? PartData.FileItem
+
+                    if (photo == null) {
+                        HttpStatusCode.BadRequest.description("Missing 'photo'")
+                    } else {
+                        if (!File("./static/photos").isDirectory) {
+                            File("./static/photos").mkdirs()
+                        }
+
+                        val fileName = "${card.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
+                        val file = File("./static/photos/${fileName}")
+
+                        withContext(Dispatchers.IO) {
+                            file.outputStream().write(photo.streamProvider().readBytes())
+                        }
+
+                        val photoUrl = "/static/photos/${fileName}"
+                        card.photo = photoUrl
+
+                        db.update(card)
+
+                        HttpStatusCode.NoContent
+                    }
+                }
+            }
+        }
+
+        post("/cards/{id}/delete") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.person!!.asKey() != person.id) {
+                    HttpStatusCode.Forbidden
+                } else {
+                    db.delete(card)
+                    HttpStatusCode.NoContent
                 }
             }
         }
