@@ -32,33 +32,36 @@ class Card(
     var active: Boolean? = null
 ) : Model()
 
-class Group : Model()
+class Group(
+    var seen: Instant? = null
+) : Model()
 
 class Member(
-    val group: String? = null,
-    val person: String? = null
-) : Model()
+    var seen: Instant? = null,
+    from: String? = null,
+    to: String? = null
+) : Edge(from, to)
 
 class Message(
-    val group: String? = null,
-    val member: String? = null,
-    val text: String? = null
+    var group: String? = null,
+    var member: String? = null,
+    var text: String? = null
 ) : Model()
 
-open class Model {
+open class Model(
     @Key
     @SerializedName(value = "id", alternate = ["_id"])
-    var id: String? = null
+    var id: String? = null,
 
     var createdAt: Instant? = null
-}
+)
 
-open class Edge : Model() {
+open class Edge(
     @From
     @SerializedName(value = "from", alternate = ["_from"])
-    var from: String? = null
+    var from: String? = null,
 
     @To
     @SerializedName(value = "to", alternate = ["_to"])
     var to: String? = null
-}
+) : Model()

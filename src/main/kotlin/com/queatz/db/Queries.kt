@@ -50,3 +50,116 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
         "limit" to limit
     )
 )
+
+fun Db.groups(person: String) = query(
+    GroupExtended::class,
+    """
+        for group in outbound @person graph `${Member::class.graph()}`
+            sort group.${f(Group::seen)} desc
+            return {
+                group,
+                members: (
+                    for person, member in inbound group graph `${Member::class.graph()}`
+                        sort member.${f(Member::seen)} desc
+                        return {
+                            person,
+                            member
+                        }
+                ),
+                latestMessage: first(
+                    for message in ${Message::class.collection()}
+                        filter message.${f(Message::group)} == group._key
+                        sort message.${f(Message::createdAt)} desc
+                        limit 1
+                        return message
+                )
+            }
+    """.trimIndent(),
+    mapOf(
+        "person" to person.asId(Person::class)
+    )
+)
+
+fun Db.group(person: String, group: String) = query(
+    GroupExtended::class,
+    """
+        for group in outbound @person graph `${Member::class.graph()}`
+            filter group._key == @group
+            return {
+                group,
+                members: (
+                    for person, member in inbound group graph `${Member::class.graph()}`
+                        sort member.${f(Member::seen)} desc
+                        return {
+                            person,
+                            member
+                        }
+                ),
+                latestMessage: first(
+                    for message in ${Message::class.collection()}
+                        filter message.${f(Message::group)} == group._key
+                        sort message.${f(Message::createdAt)} desc
+                        limit 1
+                        return message
+                )
+            }
+    """.trimIndent(),
+    mapOf(
+        "person" to person.asId(Person::class),
+        "group" to group,
+    )
+).firstOrNull()
+
+fun Db.member(person: String, group: String) = one(
+    Member::class,
+    """
+        for x in @@collection
+            filter x._from == @person and x._to == @group
+            return x
+    """.trimIndent(),
+    mapOf(
+        "person" to person.asId(Person::class),
+        "group" to group.asId(Group::class),
+    )
+)
+
+fun Db.group(people: List<String>) = one(
+    Group::class,
+    """
+        for x in @@collection
+            filter @people all in (
+                for person, edge in inbound x graph `${Member::class.graph()}` return edge._from
+            )
+            return x
+    """.trimIndent(),
+    mapOf(
+        "people" to people.map { it.asId(Person::class) }
+    )
+)
+
+fun Db.messages(group: String, offset: Int = 0, limit: Int = 20) = list(
+    Message::class,
+    """
+        for x in @@collection
+            filter x.${f(Message::group)} == @group
+            sort x.${f(Message::createdAt)} desc
+            limit @offset, @limit
+            return x
+    """.trimIndent(),
+    mapOf(
+        "group" to group,
+        "offset" to offset,
+        "limit" to limit
+    )
+)
+
+class GroupExtended(
+    var group: Group? = null,
+    var members: List<MemberAndPerson>? = null,
+    var latestMessage: Message? = null,
+)
+
+class MemberAndPerson(
+    var person: Person? = null,
+    var member: Member? = null
+)

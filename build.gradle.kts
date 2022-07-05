@@ -38,8 +38,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.3")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
     implementation("com.arangodb:arangodb-java-driver:6.18.0")
     implementation("com.arangodb:jackson-dataformat-velocypack:3.0.1")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")

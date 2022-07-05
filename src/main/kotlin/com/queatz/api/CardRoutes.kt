@@ -1,8 +1,6 @@
 package com.queatz.api
 
-import com.queatz.db.Card
-import com.queatz.db.asKey
-import com.queatz.db.cards
+import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
@@ -52,6 +50,40 @@ fun Route.cardRoutes() {
             }
         }
 
+        get("/cards/{id}/group") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    val group = db.group(listOf(me.id!!, card.person!!)) ?: db.insert(Group())
+                        .let { group ->
+                            db.insert(
+                                Member(
+                                    from = person.id!!.asId(Person::class),
+                                    to = group.id!!.asId(Group::class)
+                                )
+                            )
+
+                            if (card.person != person.id) {
+                                db.insert(
+                                    Member(
+                                        from = card.person!!.asId(Person::class),
+                                        to = group.id!!.asId(Group::class)
+                                    )
+                                )
+                            }
+                        }
+
+                    // Todo: send message referencing card
+
+                    group
+                }
+            }
+        }
+
         post("/cards/{id}") {
             respond {
                 val card = db.document(Card::class, call.parameters["id"]!!)
@@ -64,7 +96,9 @@ fun Route.cardRoutes() {
                 } else {
                     val update = call.receive<Card>()
 
-                    fun <T> check(prop: KMutableProperty1<Card, T>) { if (prop.get(update) != null) prop.set(card, prop.get(update)) }
+                    fun <T> check(prop: KMutableProperty1<Card, T>) {
+                        if (prop.get(update) != null) prop.set(card, prop.get(update))
+                    }
 
                     check(Card::active)
                     check(Card::geo)

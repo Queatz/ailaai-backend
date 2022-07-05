@@ -7,16 +7,58 @@ import com.arangodb.mapping.ArangoJack
 import com.arangodb.model.CollectionCreateOptions
 import com.arangodb.model.DocumentCreateOptions
 import com.arangodb.model.DocumentUpdateOptions
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.module.SimpleDeserializers
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.module.SimpleSerializers
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toJavaInstant
+import java.io.IOException
+import java.time.format.DateTimeFormatter
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+
+open class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
+    override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {
+        val value = jsonParser.codec.readValue(jsonParser, String::class.java)
+
+        return Instant.parse(value)
+    }
+}
+
+open class InstantSerializer : StdSerializer<Instant>(Instant::class.java) {
+    @Throws(IOException::class)
+    override fun serialize(value: Instant, jsonGenerator: JsonGenerator, serializerProvider: SerializerProvider) {
+        jsonGenerator.writeString(DateTimeFormatter.ISO_INSTANT.format(value.toJavaInstant()))
+    }
+}
+
+class InstantModule : SimpleModule() {
+    override fun getModuleName(): String = this.javaClass.simpleName
+
+    override fun setupModule(context: SetupContext) {
+        val serializers = SimpleSerializers()
+        serializers.addSerializer(Instant::class.java, InstantSerializer())
+        context.addSerializers(serializers)
+
+        val deserializers = SimpleDeserializers()
+        deserializers.addDeserializer(Instant::class.java, InstantDeserializer())
+        context.addDeserializers(deserializers)
+    }
+}
 
 class Db {
     private val db = ArangoDB.Builder()
         .user("ailaai")
         .password("ailaai")
         .serializer(ArangoJack().apply {
-            configure { it.findAndRegisterModules() }
+            configure { it.registerModule(InstantModule()) }
         })
         .build()
         .db(DbName.of("ailaai"))
@@ -105,5 +147,6 @@ internal fun String.asKey() = this.split("/").last()
 internal fun <T : Model> String.asId(klass: KClass<T>) = if (this.contains("/")) this else "${klass.collection()}/$this"
 
 fun <T : Model> KClass<T>.collection() = simpleName!!.lowercase()
+fun <T : Model> KClass<T>.graph() = "${collection()}-graph"
 
 fun Db.f(property: KMutableProperty1<*, *>) = property.name
