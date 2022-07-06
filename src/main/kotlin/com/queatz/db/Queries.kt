@@ -114,12 +114,12 @@ fun Db.memberDevices(group: String) = query(
     MemberDevice::class,
     """
         for member in `${Member::class.collection()}`
-            filter member.${f(Member::to)} == @group
+            filter member._to == @group
             return {
                 member,
                 devices: (
                     for device in `${Device::class.collection()}`
-                        filter device.${f(Device::person)} == member.${f(Member::from)}
+                        filter device.${f(Device::person)} == member._from
                         return device
                 )
             }
