@@ -6,9 +6,7 @@ import io.ktor.server.http.content.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.pipeline.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 fun Application.configureRouting() {
     launch {
@@ -34,6 +32,5 @@ fun Application.configureRouting() {
 }
 
 suspend inline fun <reified T : Any> PipelineContext<*, ApplicationCall>.respond(block: () -> T) {
-    delay(Random.nextLong(500, 2500) / 10)
     call.respond(block())
 }
