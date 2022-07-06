@@ -133,7 +133,7 @@ fun Route.cardRoutes() {
                             File("./static/photos").mkdirs()
                         }
 
-                        val fileName = "${card.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
+                        val fileName = "card-${card.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
                         val file = File("./static/photos/${fileName}")
 
                         withContext(Dispatchers.IO) {

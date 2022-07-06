@@ -67,7 +67,7 @@ fun Db.groups(person: String) = query(
                         }
                 ),
                 latestMessage: first(
-                    for message in ${Message::class.collection()}
+                    for message in `${Message::class.collection()}`
                         filter message.${f(Message::group)} == group._key
                         sort message.${f(Message::createdAt)} desc
                         limit 1
@@ -96,7 +96,7 @@ fun Db.group(person: String, group: String) = query(
                         }
                 ),
                 latestMessage: first(
-                    for message in ${Message::class.collection()}
+                    for message in `${Message::class.collection()}`
                         filter message.${f(Message::group)} == group._key
                         sort message.${f(Message::createdAt)} desc
                         limit 1
@@ -109,6 +109,25 @@ fun Db.group(person: String, group: String) = query(
         "group" to group,
     )
 ).firstOrNull()
+
+fun Db.memberDevices(group: String) = query(
+    MemberDevice::class,
+    """
+        for member in `${Member::class.collection()}`
+            filter member.${f(Member::to)} == @group
+            return {
+                member,
+                devices: (
+                    for device in `${Device::class.collection()}`
+                        filter device.${f(Device::person)} == member.${f(Member::from)}
+                        return device
+                )
+            }
+    """.trimIndent(),
+    mapOf(
+        "group" to group.asId(Group::class)
+    )
+)
 
 fun Db.member(person: String, group: String) = one(
     Member::class,
@@ -153,10 +172,31 @@ fun Db.messages(group: String, offset: Int = 0, limit: Int = 20) = list(
     )
 )
 
+fun Db.updateDevice(person: String, type: DeviceType, token: String) = one(
+    Device::class,
+        """
+            upsert { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
+                insert { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Device::person)}: @person, ${f(Person::createdAt)}: DATE_ISO8601(DATE_NOW()) }
+                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Device::person)}: @person}
+                in @@collection
+                return NEW || OLD
+        """,
+    mapOf(
+        "person" to person.asId(Person::class),
+        "type" to type,
+        "token" to token
+    )
+)
+
+class MemberDevice(
+    var member: Member? = null,
+    var devices: List<Device>? = null
+)
+
 class GroupExtended(
     var group: Group? = null,
     var members: List<MemberAndPerson>? = null,
-    var latestMessage: Message? = null,
+    var latestMessage: Message? = null
 )
 
 class MemberAndPerson(

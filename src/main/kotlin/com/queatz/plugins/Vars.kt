@@ -1,6 +1,7 @@
 package com.queatz.plugins
 
 import com.google.gson.Gson
+import com.queatz.Push
 import com.queatz.Secrets
 import com.queatz.db.Db
 import java.io.File
@@ -14,3 +15,4 @@ val secrets = try {
 }
 
 val db = Db()
+val push = Push()

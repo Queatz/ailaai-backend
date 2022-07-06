@@ -48,6 +48,17 @@ class Message(
     var text: String? = null
 ) : Model()
 
+class Device(
+    var person: String? = null,
+    var type: DeviceType? = null,
+    var token: String? = null
+) : Model()
+
+enum class DeviceType {
+    Hms,
+    Gms
+}
+
 open class Model(
     @Key
     @SerializedName(value = "id", alternate = ["_id"])

@@ -1,8 +1,12 @@
 package com.queatz.api
 
+import com.queatz.MessagePushData
+import com.queatz.PushAction
+import com.queatz.PushData
 import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.me
+import com.queatz.plugins.push
 import com.queatz.plugins.respond
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -37,6 +41,7 @@ fun Route.groupRoutes() {
             respond {
                 val message = call.receive<Message>()
                 val member = db.member(me.id!!, call.parameters["id"]!!)
+                val me = me
 
                 if (member == null) {
                     HttpStatusCode.NotFound
@@ -50,7 +55,19 @@ fun Route.groupRoutes() {
                     group.seen = Clock.System.now()
                     db.update(group)
 
-                    // Todo: send push notification or mqtt
+                    val pushData = PushData(PushAction.Message, MessagePushData(
+                        Group().apply { id = group.id },
+                        Person(name = me.name).apply { id = me.id },
+                        Message(text = message.text)
+                    ))
+
+                    db.memberDevices(group.id!!).filter {
+                        it.member?.id != member.id
+                    }.forEach {
+                        it.devices?.forEach { device ->
+                            push.sendPush(device, pushData)
+                        }
+                    }
 
                     HttpStatusCode.OK
                 }

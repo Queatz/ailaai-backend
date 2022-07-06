@@ -15,6 +15,10 @@ fun Application.configureRouting() {
         // Delete all expired invite codes every hour
     }
 
+    launch {
+        push.start()
+    }
+
     routing {
         get("/hi") { call.respondText("{\"hi\": true}") }
         signRoutes()
