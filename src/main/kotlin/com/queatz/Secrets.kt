@@ -14,7 +14,10 @@ data class SecretsHms(
 
 data class SecretsGms(
     val appId: String,
-    val apiKey: String,
+    val clientId: String,
+    val clientEmail: String,
+    val privateKeyId: String,
+    val privateKey: String
 )
 
 data class SecretsJwt(

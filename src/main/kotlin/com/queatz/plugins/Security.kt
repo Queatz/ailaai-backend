@@ -26,7 +26,6 @@ fun Application.configureSecurity() {
                 JWT
                     .require(Algorithm.HMAC256(jwt.secret))
                     .withAudience(jwt.audience)
-
                     .withIssuer(jwt.issuer)
                     .build()
             )
