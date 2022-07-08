@@ -20,10 +20,11 @@ fun Application.configureRouting() {
     routing {
         get("/hi") { call.respondText("{\"hi\": true}") }
         signRoutes()
-        groupRoutes()
         meRoutes()
-        messageRoutes()
         cardRoutes()
+        groupRoutes()
+        memberRoutes()
+        messageRoutes()
 
         static("/static") {
             files("static")

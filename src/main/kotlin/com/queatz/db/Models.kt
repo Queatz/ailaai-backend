@@ -39,6 +39,7 @@ class Group(
 
 class Member(
     var seen: Instant? = null,
+    var hide: Boolean? = null,
     from: String? = null,
     to: String? = null
 ) : Edge(from, to)

@@ -54,7 +54,8 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
 fun Db.groups(person: String) = query(
     GroupExtended::class,
     """
-        for group in outbound @person graph `${Member::class.graph()}`
+        for group, edge in outbound @person graph `${Member::class.graph()}`
+            filter edge.${f(Member::hide)} != true
             sort group.${f(Group::seen)} desc
             return {
                 group,

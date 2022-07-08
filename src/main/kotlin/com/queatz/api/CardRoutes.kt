@@ -61,7 +61,7 @@ fun Route.cardRoutes() {
                 } else {
                     val group = db.group(listOf(me.id!!, card.person!!)) ?: db.insert(Group())
                         .also { group ->
-                            app.createGroup(person.id!!.asId(Person::class), card.person!!.asId(Person::class))
+                            app.createGroup(person.id!!, card.person!!)
                         }
 
                     // Todo: send message referencing card
