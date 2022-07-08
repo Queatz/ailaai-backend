@@ -60,7 +60,7 @@ fun Route.cardRoutes() {
                     HttpStatusCode.NotFound
                 } else {
                     val group = db.group(listOf(me.id!!, card.person!!)) ?: db.insert(Group())
-                        .also { group ->
+                        .also {
                             app.createGroup(person.id!!, card.person!!)
                         }
 

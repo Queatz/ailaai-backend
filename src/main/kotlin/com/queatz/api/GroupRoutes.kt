@@ -70,9 +70,16 @@ fun Route.groupRoutes() {
 
                     db.memberDevices(group.id!!).filter {
                         it.member?.id != member.id
-                    }.forEach {
-                        it.devices?.forEach { device ->
-                            push.sendPush(device, pushData)
+                    }.apply {
+                        filter { it.member?.hide == true }.forEach {
+                            it.member!!.hide = false
+                            db.update(it.member!!)
+                        }
+
+                        forEach {
+                            it.devices?.forEach { device ->
+                                push.sendPush(device, pushData)
+                            }
                         }
                     }
 
