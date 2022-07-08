@@ -59,7 +59,7 @@ fun Route.cardRoutes() {
                     HttpStatusCode.NotFound
                 } else {
                     val group = db.group(listOf(me.id!!, card.person!!)) ?: db.insert(Group())
-                        .let { group ->
+                        .also { group ->
                             db.insert(
                                 Member(
                                     from = person.id!!.asId(Person::class),
