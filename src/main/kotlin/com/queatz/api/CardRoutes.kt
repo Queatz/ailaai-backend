@@ -1,6 +1,7 @@
 package com.queatz.api
 
 import com.queatz.db.*
+import com.queatz.plugins.app
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
@@ -60,21 +61,7 @@ fun Route.cardRoutes() {
                 } else {
                     val group = db.group(listOf(me.id!!, card.person!!)) ?: db.insert(Group())
                         .also { group ->
-                            db.insert(
-                                Member(
-                                    from = person.id!!.asId(Person::class),
-                                    to = group.id!!.asId(Group::class)
-                                )
-                            )
-
-                            if (card.person != person.id) {
-                                db.insert(
-                                    Member(
-                                        from = card.person!!.asId(Person::class),
-                                        to = group.id!!.asId(Group::class)
-                                    )
-                                )
-                            }
+                            app.createGroup(person.id!!.asId(Person::class), card.person!!.asId(Person::class))
                         }
 
                     // Todo: send message referencing card

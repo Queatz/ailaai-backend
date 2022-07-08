@@ -9,7 +9,8 @@ import kotlinx.datetime.Instant
 class Person(
     var name: String? = null,
     var photo: String? = null,
-    var inviter: String? = null
+    var inviter: String? = null,
+    var seen: Instant? = null
 ) : Model()
 
 class Settings(

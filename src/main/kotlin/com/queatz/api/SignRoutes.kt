@@ -3,6 +3,7 @@ package com.queatz.api
 import com.queatz.db.Person
 import com.queatz.db.invite
 import com.queatz.db.totalPeople
+import com.queatz.plugins.app
 import com.queatz.plugins.db
 import com.queatz.plugins.jwt
 import com.queatz.plugins.respond
@@ -19,7 +20,7 @@ fun Route.signRoutes() {
             val code = call.receive<SignUpRequest>().code
 
             if (code == "000000" && db.totalPeople == 0) {
-                val person = db.insert(Person())
+                val person = db.insert(Person(seen = Clock.System.now()))
                 TokenResponse(jwt(person.id!!))
             } else {
                 val invite = db.invite(code)
@@ -30,11 +31,11 @@ fun Route.signRoutes() {
                     db.delete(invite)
                     HttpStatusCode.Unauthorized
                 } else {
-                    val person = db.insert(Person().apply {
-                        inviter = invite.person
-                    })
+                    val person = db.insert(Person(seen = Clock.System.now(), inviter = invite.person))
 
                     db.delete(invite)
+
+                    app.createGroup(person.id!!, invite.person!!)
 
                     TokenResponse(jwt(person.id!!))
                 }

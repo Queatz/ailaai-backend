@@ -19,6 +19,10 @@ fun Route.groupRoutes() {
     authenticate {
         get("/groups") {
             respond {
+                val me = me
+                me.seen = Clock.System.now()
+                db.update(me)
+
                 db.groups(me.id!!)
             }
         }
@@ -50,6 +54,9 @@ fun Route.groupRoutes() {
 
                     member.seen = Clock.System.now()
                     db.update(member)
+
+                    me.seen = Clock.System.now()
+                    db.update(me)
 
                     val group = db.document(Group::class, member.to!!)!!
                     group.seen = Clock.System.now()
