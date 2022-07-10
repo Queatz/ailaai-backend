@@ -3,6 +3,7 @@ package com.queatz.api
 import com.queatz.db.Person
 import com.queatz.db.invite
 import com.queatz.db.totalPeople
+import com.queatz.db.transferWithCode
 import com.queatz.plugins.app
 import com.queatz.plugins.db
 import com.queatz.plugins.jwt
@@ -43,14 +44,24 @@ fun Route.signRoutes() {
         }
     }
 
-    post("/sign/on") {
+    post("/sign/in") {
         respond {
-            val credentials = call.receive<SignOnRequest>()
+            val code = call.receive<SignUpRequest>().code
 
-            if (credentials.code != null) {
-                // Check code
+            val transfer = db.transferWithCode(code)
+
+            if (transfer == null) {
+                HttpStatusCode.Unauthorized
             } else {
-                // Send email
+                val person = db.document(Person::class, transfer.person!!)
+
+                if (person == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    db.delete(transfer)
+
+                    TokenResponse(jwt(person.id!!))
+                }
             }
         }
     }

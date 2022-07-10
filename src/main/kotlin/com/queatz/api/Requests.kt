@@ -4,7 +4,6 @@ data class SignUpRequest(
     val code: String
 )
 
-data class SignOnRequest(
-    val email: String,
-    val code: String?
+data class SignInRequest(
+    val code: String
 )

@@ -111,6 +111,29 @@ fun Db.group(person: String, group: String) = query(
     )
 ).firstOrNull()
 
+fun Db.transferOfPerson(person: String) = one(
+    Transfer::class,
+    """
+        for x in @@collection
+            filter x.${f(Transfer::person)} == @person
+            return x
+    """.trimIndent(),
+    mapOf(
+        "person" to person
+    )
+)
+fun Db.transferWithCode(code: String) = one(
+    Transfer::class,
+    """
+        for x in @@collection
+            filter x.${f(Transfer::code)} == @code
+            return x
+    """.trimIndent(),
+    mapOf(
+        "code" to code
+    )
+)
+
 fun Db.memberDevices(group: String) = query(
     MemberDevice::class,
     """

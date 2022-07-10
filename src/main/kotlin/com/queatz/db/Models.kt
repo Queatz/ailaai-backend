@@ -23,6 +23,11 @@ class Invite(
     var code: String? = null
 ) : Model()
 
+class Transfer(
+    var person: String? = null,
+    var code: String? = null
+) : Model()
+
 class Card(
     var person: String? = null,
     var name: String? = null,
