@@ -65,7 +65,7 @@ fun Route.groupRoutes() {
                     val pushData = PushData(PushAction.Message, MessagePushData(
                         Group().apply { id = group.id },
                         Person(name = me.name).apply { id = me.id },
-                        Message(text = message.text)
+                        Message(text = message.text?.ellipsize())
                     ))
 
                     db.memberDevices(group.id!!).filter {
@@ -89,3 +89,5 @@ fun Route.groupRoutes() {
         }
     }
 }
+
+fun String.ellipsize(maxLength: Int = 128) = if (length <= maxLength) this else this.take(maxLength - 1) + "…"
