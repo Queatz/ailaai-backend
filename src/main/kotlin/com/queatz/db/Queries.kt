@@ -38,16 +38,40 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
     """
         for x in @@collection
             filter x.${f(Card::active)} == true
-                and (@search == null or contains(lower(x.${f(Card::conversation)}), @search))
+                and x.${f(Card::parent)} == null
+                and (@search == null or contains(lower(x.${f(Card::conversation)}), @search) or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search))
             sort distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             limit @offset, @limit
-            return x
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                }
+            )
     """.trimIndent(),
     mapOf(
         "geo" to geo,
         "search" to search?.lowercase(),
         "offset" to offset,
         "limit" to limit
+    )
+)
+
+fun Db.cardsOfCard(card: String) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::parent)} == @card
+                and x.${f(Card::active)} == true
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                }
+            )
+    """.trimIndent(),
+    mapOf(
+        "card" to card
     )
 )
 

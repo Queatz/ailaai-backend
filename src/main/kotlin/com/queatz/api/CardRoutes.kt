@@ -51,6 +51,20 @@ fun Route.cardRoutes() {
             }
         }
 
+        get("/cards/{id}/cards") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.person!!.asKey() == me.id || card.active == true) {
+                    db.cardsOfCard(card.id!!)
+                } else {
+                    HttpStatusCode.NotFound
+                }
+            }
+        }
+
         get("/cards/{id}/group") {
             respond {
                 val card = db.document(Card::class, call.parameters["id"]!!)
@@ -83,16 +97,20 @@ fun Route.cardRoutes() {
                 } else {
                     val update = call.receive<Card>()
 
-                    fun <T> check(prop: KMutableProperty1<Card, T>) {
-                        if (prop.get(update) != null) prop.set(card, prop.get(update))
+                    fun <T> check(prop: KMutableProperty1<Card, T>, doOnSet: (() -> Unit)? = null) {
+                        if (prop.get(update) != null) {
+                            prop.set(card, prop.get(update))
+                            doOnSet?.invoke()
+                        }
                     }
 
                     check(Card::active)
-                    check(Card::geo)
+                    check(Card::geo) { card.parent = update.parent }
                     check(Card::location)
                     check(Card::name)
                     check(Card::conversation)
                     check(Card::photo)
+                    check(Card::parent)
 
                     db.update(card)
                 }
