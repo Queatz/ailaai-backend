@@ -63,6 +63,7 @@ fun Db.cardsOfCard(card: String) = list(
         for x in @@collection
             filter x.${f(Card::parent)} == @card
                 and x.${f(Card::active)} == true
+           sort x.${f(Card::createdAt)} desc
             return merge(
                 x,
                 {

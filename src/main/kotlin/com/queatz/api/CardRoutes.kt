@@ -33,7 +33,7 @@ fun Route.cardRoutes() {
         post("/cards") {
             respond {
                 val person = me
-                db.insert(Card(person.id!!, person.name, active = false))
+                db.insert(Card(person.id!!, name = person.name, active = false))
             }
         }
 
@@ -101,6 +101,14 @@ fun Route.cardRoutes() {
                         if (prop.get(update) != null) {
                             prop.set(card, prop.get(update))
                             doOnSet?.invoke()
+                        }
+                    }
+
+                    if (update.parent != null) {
+                        val parent = db.document(Card::class, call.parameters["id"]!!)
+
+                        if (parent!!.person != card.person) {
+                            return@respond HttpStatusCode.Forbidden
                         }
                     }
 
