@@ -26,7 +26,12 @@ fun Db.cardsOfPerson(person: String) = list(
         for x in @@collection
             filter x.${f(Card::person)} == @person
             sort x.${f(Card::createdAt)} desc
-            return x
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                }
+            )
     """.trimIndent(),
     mapOf(
         "person" to person

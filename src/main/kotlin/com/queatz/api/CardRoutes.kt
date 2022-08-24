@@ -33,7 +33,8 @@ fun Route.cardRoutes() {
         post("/cards") {
             respond {
                 val person = me
-                db.insert(Card(person.id!!, name = person.name, active = false))
+                val card = call.receiveOrNull<Card>()
+                db.insert(Card(person.id!!, name = person.name, parent = card?.parent, active = false))
             }
         }
 
