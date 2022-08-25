@@ -57,7 +57,7 @@ fun Route.cardRoutes() {
                     db.insert(
                         Card(
                             person.id!!,
-                            name = person.name,
+                            name = card?.name ?: person.name,
                             parent = parentCard?.id,
                             equipped = card?.equipped,
                             active = false
@@ -127,10 +127,11 @@ fun Route.cardRoutes() {
                 } else {
                     val update = call.receive<Card>()
 
-                    fun <T> check(prop: KMutableProperty1<Card, T>, doOnSet: (() -> Unit)? = null) {
-                        if (prop.get(update) != null) {
-                            prop.set(card, prop.get(update))
-                            doOnSet?.invoke()
+                    fun <T> check(prop: KMutableProperty1<Card, T>, doOnSet: ((T) -> Unit)? = null) {
+                        val value = prop.get(update)
+                        if (value != null) {
+                            prop.set(card, value)
+                            doOnSet?.invoke(value)
                         }
                     }
 
@@ -152,8 +153,12 @@ fun Route.cardRoutes() {
                     check(Card::name)
                     check(Card::conversation)
                     check(Card::photo)
-                    check(Card::parent)
+                    check(Card::parent) { card.equipped = update.equipped }
                     check(Card::equipped)
+
+                    if (card.photo == null && card.active == true) {
+                        card.active = false
+                    }
 
                     db.update(card)
                 }
