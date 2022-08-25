@@ -21,8 +21,16 @@ fun Route.cardRoutes() {
     authenticate {
         get("/cards") {
             respond {
+                val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
+
+                if (geo.size != 2) {
+                    return@respond HttpStatusCode.BadRequest
+                }
+
+                db.updateEquippedCards(me.id!!, geo)
+
                 db.cards(
-                    call.parameters["geo"]!!.split(",").map { it.toDouble() },
+                    geo,
                     call.parameters["search"],
                     call.parameters["offset"]?.toInt() ?: 0,
                     call.parameters["limit"]?.toInt() ?: 20
@@ -34,7 +42,28 @@ fun Route.cardRoutes() {
             respond {
                 val person = me
                 val card = call.receiveOrNull<Card>()
-                db.insert(Card(person.id!!, name = person.name, parent = card?.parent, active = false))
+
+                val parentCard = card?.parent?.let {
+                    db.document(Card::class, it)
+                }
+
+                if (parentCard != null && card.equipped == true) {
+                    return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
+                }
+
+                if (parentCard != null && parentCard.person!!.asKey() != me.id) {
+                    HttpStatusCode.Forbidden
+                } else {
+                    db.insert(
+                        Card(
+                            person.id!!,
+                            name = person.name,
+                            parent = parentCard?.id,
+                            equipped = card?.equipped,
+                            active = false
+                        )
+                    )
+                }
             }
         }
 
@@ -59,7 +88,7 @@ fun Route.cardRoutes() {
                 if (card == null) {
                     HttpStatusCode.NotFound
                 } else if (card.person!!.asKey() == me.id || card.active == true) {
-                    db.cardsOfCard(card.id!!)
+                    db.cardsOfCard(card.id!!, me.id!!)
                 } else {
                     HttpStatusCode.NotFound
                 }
@@ -113,6 +142,10 @@ fun Route.cardRoutes() {
                         }
                     }
 
+                    if (update.parent != null && update.equipped == true) {
+                        return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
+                    }
+
                     check(Card::active)
                     check(Card::geo) { card.parent = update.parent }
                     check(Card::location)
@@ -120,6 +153,7 @@ fun Route.cardRoutes() {
                     check(Card::conversation)
                     check(Card::photo)
                     check(Card::parent)
+                    check(Card::equipped)
 
                     db.update(card)
                 }
