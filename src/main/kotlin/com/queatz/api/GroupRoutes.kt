@@ -50,7 +50,7 @@ fun Route.groupRoutes() {
                 if (member == null) {
                     HttpStatusCode.NotFound
                 } else {
-                    db.insert(Message(member.to?.asKey(), member.id, message.text))
+                    db.insert(Message(member.to?.asKey(), member.id, message.text, message.attachment))
 
                     member.seen = Clock.System.now()
                     db.update(member)
