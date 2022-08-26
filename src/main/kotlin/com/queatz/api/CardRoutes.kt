@@ -214,6 +214,13 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
+                    db.allCardsOfCard(card.id!!).onEach {
+                        it.parent = card.parent
+                        it.geo = card.geo
+                        it.equipped = card.equipped
+                        db.update(it)
+                    }
+
                     db.delete(card)
                     HttpStatusCode.NoContent
                 }

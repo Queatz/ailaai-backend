@@ -95,6 +95,18 @@ fun Db.cardsOfCard(card: String, person: String) = list(
     )
 )
 
+fun Db.allCardsOfCard(card: String) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::parent)} == @card
+            return x
+    """.trimIndent(),
+    mapOf(
+        "card" to card
+    )
+)
+
 fun Db.groups(person: String) = query(
     GroupExtended::class,
     """
