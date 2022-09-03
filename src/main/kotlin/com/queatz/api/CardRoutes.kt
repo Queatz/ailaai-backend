@@ -1,10 +1,7 @@
 package com.queatz.api
 
 import com.queatz.db.*
-import com.queatz.plugins.app
-import com.queatz.plugins.db
-import com.queatz.plugins.me
-import com.queatz.plugins.respond
+import com.queatz.plugins.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -18,6 +15,36 @@ import kotlin.random.Random
 import kotlin.reflect.KMutableProperty1
 
 fun Route.cardRoutes() {
+    authenticate(optional = true) {
+        get("/cards/{id}") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.isActiveOrMine(meOrNull)) {
+                    card
+                } else {
+                    HttpStatusCode.NotFound
+                }
+            }
+        }
+
+        get("/cards/{id}/cards") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.isActiveOrMine(meOrNull)) {
+                    db.cardsOfCard(card.id!!, meOrNull?.id)
+                } else {
+                    HttpStatusCode.NotFound
+                }
+            }
+        }
+    }
+
     authenticate {
         get("/cards") {
             respond {
@@ -63,34 +90,6 @@ fun Route.cardRoutes() {
                             active = false
                         )
                     )
-                }
-            }
-        }
-
-        get("/cards/{id}") {
-            respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
-
-                if (card == null) {
-                    HttpStatusCode.NotFound
-                } else if (card.person!!.asKey() == me.id || card.active == true) {
-                    card
-                } else {
-                    HttpStatusCode.NotFound
-                }
-            }
-        }
-
-        get("/cards/{id}/cards") {
-            respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
-
-                if (card == null) {
-                    HttpStatusCode.NotFound
-                } else if (card.person!!.asKey() == me.id || card.active == true) {
-                    db.cardsOfCard(card.id!!, me.id!!)
-                } else {
-                    HttpStatusCode.NotFound
                 }
             }
         }
@@ -228,3 +227,5 @@ fun Route.cardRoutes() {
         }
     }
 }
+
+private fun Card.isActiveOrMine(me: Person?) = person!!.asKey() == me?.id || active == true

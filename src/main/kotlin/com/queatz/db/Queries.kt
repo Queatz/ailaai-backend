@@ -43,6 +43,7 @@ fun Db.updateEquippedCards(person: String, geo: List<Double>) = query(
     """
         for x in `${Card::class.collection()}`
             filter x.${f(Card::person)} == @person
+                and x.${f(Card::equipped)} == true
             update { _key: x._key, ${f(Card::geo)}: @geo } in `${Card::class.collection()}`
     """.trimIndent(),
     mapOf(
@@ -75,13 +76,13 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
     )
 )
 
-fun Db.cardsOfCard(card: String, person: String) = list(
+fun Db.cardsOfCard(card: String, person: String?) = list(
     Card::class,
     """
         for x in @@collection
             filter x.${f(Card::parent)} == @card
                 and (x.${f(Card::active)} == true or x.${f(Card::person)} == @person)
-           sort x.${f(Card::createdAt)} desc
+           sort x.${f(Card::name)} asc
             return merge(
                 x,
                 {

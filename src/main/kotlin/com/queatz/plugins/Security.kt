@@ -51,3 +51,8 @@ val PipelineContext<*, ApplicationCall>.me
     get() = call.principal<JWTPrincipal>()!!
         .getClaim("id", String::class)!!
         .let { db.document(Person::class, it) }!!
+
+val PipelineContext<*, ApplicationCall>.meOrNull
+    get() = call.principal<JWTPrincipal>()
+        ?.getClaim("id", String::class)
+        ?.let { db.document(Person::class, it) }
