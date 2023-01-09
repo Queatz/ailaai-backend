@@ -29,7 +29,11 @@ fun Route.groupRoutes() {
         post("/groups") {
             respond {
                 call.receive<CreateGroupBody>().let {
-                    db.group(it.people) ?: app.createGroup(it.people + me.id!!)
+                    val people = it.people + me.id!!
+
+                    if (people.size > 20) {
+                        HttpStatusCode.BadRequest.description("Too many people")
+                    } else db.group(it.people) ?: app.createGroup(people)
                 }
             }
         }
