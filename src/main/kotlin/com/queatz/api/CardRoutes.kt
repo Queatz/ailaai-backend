@@ -68,7 +68,7 @@ fun Route.cardRoutes() {
         post("/cards") {
             respond {
                 val person = me
-                val card = call.receiveOrNull<Card>()
+                val card = call.receiveNullable<Card>()
 
                 val parentCard = card?.parent?.let {
                     db.document(Card::class, it)
@@ -102,14 +102,7 @@ fun Route.cardRoutes() {
                 if (card == null) {
                     HttpStatusCode.NotFound
                 } else {
-                    val group = db.group(listOf(me.id!!, card.person!!)) ?: db.insert(Group())
-                        .also {
-                            app.createGroup(person.id!!, card.person!!)
-                        }
-
-                    // Todo: send message referencing card
-
-                    group
+                    db.group(listOf(me.id!!, card.person!!)) ?: app.createGroup(person.id!!, card.person!!)
                 }
             }
         }

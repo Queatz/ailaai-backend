@@ -7,7 +7,11 @@ import com.queatz.db.asId
 import com.queatz.plugins.db
 
 class App {
-    fun createGroup(vararg person: String) {
+    fun createGroup(people: List<String>) {
+        createGroup(*people.toTypedArray())
+    }
+
+    fun createGroup(vararg person: String) =
         db.insert(Group())
             .also {
                 val group = it.id!!.asId(Group::class)
@@ -21,5 +25,4 @@ class App {
                     )
                 }
             }
-    }
 }

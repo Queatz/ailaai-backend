@@ -4,16 +4,15 @@ import com.queatz.MessagePushData
 import com.queatz.PushAction
 import com.queatz.PushData
 import com.queatz.db.*
-import com.queatz.plugins.db
-import com.queatz.plugins.me
-import com.queatz.plugins.push
-import com.queatz.plugins.respond
+import com.queatz.plugins.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+
+data class CreateGroupBody(val people: List<String>)
 
 fun Route.groupRoutes() {
     authenticate {
@@ -24,6 +23,14 @@ fun Route.groupRoutes() {
                 db.update(me)
 
                 db.groups(me.id!!)
+            }
+        }
+
+        post("/groups") {
+            respond {
+                call.receive<CreateGroupBody>().let {
+                    db.group(it.people) ?: app.createGroup(it.people)
+                }
             }
         }
 
@@ -62,11 +69,13 @@ fun Route.groupRoutes() {
                     group.seen = Clock.System.now()
                     db.update(group)
 
-                    val pushData = PushData(PushAction.Message, MessagePushData(
-                        Group().apply { id = group.id },
-                        Person(name = me.name).apply { id = me.id },
-                        Message(text = message.text?.ellipsize())
-                    ))
+                    val pushData = PushData(
+                        PushAction.Message, MessagePushData(
+                            Group().apply { id = group.id },
+                            Person(name = me.name).apply { id = me.id },
+                            Message(text = message.text?.ellipsize())
+                        )
+                    )
 
                     db.memberDevices(group.id!!).filter {
                         it.member?.id != member.id

@@ -24,13 +24,13 @@ class InstantTypeConverter : JsonSerializer<Instant>, JsonDeserializer<Instant> 
     override fun serialize(
         src: Instant,
         srcType: Type,
-        context: JsonSerializationContext
+        context: JsonSerializationContext,
     ) = JsonPrimitive(DateUtil.format(Date.from(src.toJavaInstant())))
 
     override fun deserialize(
         json: JsonElement,
         type: Type,
-        context: JsonDeserializationContext
+        context: JsonDeserializationContext,
     ) = try {
         DateUtil.parse(json.asString).toInstant().toKotlinInstant()
     } catch (e: ParseException) {

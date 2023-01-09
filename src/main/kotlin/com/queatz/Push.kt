@@ -154,6 +154,7 @@ class Push {
                     throwable.printStackTrace()
                 }
             }
+
             DeviceType.Gms -> {
                 try {
                     val response = http.post(gmsPushEndpoint) {
@@ -186,34 +187,34 @@ enum class PushAction {
 
 data class PushData(
     val action: PushAction? = null,
-    val data: Any? = null
+    val data: Any? = null,
 )
 
 data class MessagePushData(
     val group: Group,
     val person: Person,
-    val message: Message
+    val message: Message,
 )
 
 data class OAuthResponse(
     val access_token: String? = null,
-    val expires_in: Long? = null
+    val expires_in: Long? = null,
 )
 
 data class HmsPushBody(
-    @SerializedName("message") var message: HmsPushBodyMessage? = HmsPushBodyMessage()
+    @SerializedName("message") var message: HmsPushBodyMessage? = HmsPushBodyMessage(),
 )
 
 data class HmsPushBodyMessage(
     @SerializedName("data") var data: String? = null,
-    @SerializedName("token") var token: List<String>? = null
+    @SerializedName("token") var token: List<String>? = null,
 )
 
 data class GmsPushBody(
-    @SerializedName("message") var message: GmsPushBodyMessage? = GmsPushBodyMessage()
+    @SerializedName("message") var message: GmsPushBodyMessage? = GmsPushBodyMessage(),
 )
 
 data class GmsPushBodyMessage(
     @SerializedName("data") var data: Map<String, String>? = null,
-    @SerializedName("token") var token: String? = null
+    @SerializedName("token") var token: String? = null,
 )

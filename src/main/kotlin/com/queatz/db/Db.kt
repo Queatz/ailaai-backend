@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.module.SimpleDeserializers
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.module.SimpleSerializers
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
@@ -24,7 +25,7 @@ import java.time.format.DateTimeFormatter
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 
-open class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
+class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {
         val value = jsonParser.codec.readValue(jsonParser, String::class.java)
 
@@ -32,7 +33,7 @@ open class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     }
 }
 
-open class InstantSerializer : StdSerializer<Instant>(Instant::class.java) {
+class InstantSerializer : StdSerializer<Instant>(Instant::class.java) {
     @Throws(IOException::class)
     override fun serialize(value: Instant, jsonGenerator: JsonGenerator, serializerProvider: SerializerProvider) {
         jsonGenerator.writeString(DateTimeFormatter.ISO_INSTANT.format(value.toJavaInstant()))
@@ -58,7 +59,10 @@ class Db {
         .user("ailaai")
         .password("ailaai")
         .serializer(ArangoJack().apply {
-            configure { it.registerModule(InstantModule()) }
+            configure {
+                it.registerModule(InstantModule())
+                it.registerModule(KotlinModule.Builder().build())
+            }
         })
         .build()
         .db(DbName.of("ailaai"))
@@ -155,7 +159,7 @@ fun <T : Model> KClass<T>.db(
     block
 )
 
-data class CollectionConfig(
+class CollectionConfig(
     val name: String,
     val collectionType: CollectionType,
     val nodes: List<KClass<out Model>> = listOf(),

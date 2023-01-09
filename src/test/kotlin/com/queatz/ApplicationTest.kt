@@ -5,7 +5,7 @@ import io.ktor.http.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.defaultheaders.*
-import io.ktor.serialization.gson.*
+import io.ktor.serialization.kotlinx.json.gson.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.auth.*
 import io.ktor.util.*
@@ -22,6 +22,7 @@ import io.ktor.client.statement.*
 import kotlin.test.*
 import io.ktor.server.testing.*
 import com.queatz.plugins.*
+import io.ktor.client.call.body
 
 class ApplicationTest {
     @Test

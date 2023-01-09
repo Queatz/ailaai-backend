@@ -31,10 +31,12 @@ fun Route.meRoutes() {
 
         get("/me/transfer") {
             respond {
-                db.transferOfPerson(me.id!!) ?: db.insert(Transfer(
-                    person = me.id!!,
-                    code = (1..16).token()
-                ))
+                db.transferOfPerson(me.id!!) ?: db.insert(
+                    Transfer(
+                        person = me.id!!,
+                        code = (1..16).token()
+                    )
+                )
             }
         }
 
@@ -102,6 +104,7 @@ fun Route.meRoutes() {
     }
 }
 
-fun IntRange.token() = joinToString("") { Random.nextInt(35).toString(36).let { if (Random.nextBoolean()) it.uppercase() else it } }
+fun IntRange.token() =
+    joinToString("") { Random.nextInt(35).toString(36).let { if (Random.nextBoolean()) it.uppercase() else it } }
 
 private fun Random.Default.code() = (1..6).joinToString("") { "${nextInt(9)}" }
