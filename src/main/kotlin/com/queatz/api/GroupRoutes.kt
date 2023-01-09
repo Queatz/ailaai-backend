@@ -29,7 +29,7 @@ fun Route.groupRoutes() {
         post("/groups") {
             respond {
                 call.receive<CreateGroupBody>().let {
-                    db.group(it.people) ?: app.createGroup(it.people)
+                    db.group(it.people) ?: app.createGroup(it.people + me.id!!)
                 }
             }
         }

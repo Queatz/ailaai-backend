@@ -4,7 +4,7 @@ val logback_version: String by project
 
 plugins {
     application
-    kotlin("jvm") version "1.7.0"
+    kotlin("jvm") version "1.8.0"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -25,9 +25,9 @@ repositories {
 
 dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.3")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.4.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
     implementation("com.arangodb:arangodb-java-driver:6.20.0")
     implementation("com.arangodb:jackson-dataformat-velocypack:3.1.0")
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
