@@ -36,5 +36,22 @@ fun Route.memberRoutes() {
                 }
             }
         }
+
+        post("/members/{id}/delete") {
+            respond {
+                val member = db.document(Member::class, call.parameters["id"]!!)
+
+                if (member == null) {
+                    HttpStatusCode.NotFound
+                } else if (member.from != me.id!!.asId(Person::class)) {
+                    HttpStatusCode.Forbidden
+                } else {
+                    member.hide = true
+                    member.gone = true
+                    db.update(member)
+                    HttpStatusCode.NoContent
+                }
+            }
+        }
     }
 }

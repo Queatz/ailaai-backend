@@ -195,7 +195,7 @@ fun Db.memberDevices(group: String) = query(
     MemberDevice::class,
     """
         for member in `${Member::class.collection()}`
-            filter member._to == @group
+            filter member._to == @group and member.${f(Member::gone)} != true
             return {
                 member,
                 devices: (
@@ -227,9 +227,11 @@ fun Db.group(people: List<String>) = one(
     Group::class,
     """
         for x in @@collection
-            filter @people all in (
+            let members = (
                 for person, edge in inbound x graph `${Member::class.graph()}` return edge._from
             )
+            filter @people all in members
+                and count(@people) == count(members)
             return x
     """.trimIndent(),
     mapOf(

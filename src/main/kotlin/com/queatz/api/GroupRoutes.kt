@@ -44,8 +44,38 @@ fun Route.groupRoutes() {
             }
         }
 
+
+        post("/groups/{id}") {
+            respond {
+                val groupUpdated = call.receive<Group>()
+                val member = db.member(me.id!!, call.parameters["id"]!!)
+
+                if (member == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    val group = db.document(Group::class, member.to!!) ?: return@respond HttpStatusCode.NotFound
+
+                    if (groupUpdated.name != null) {
+                        group.name = groupUpdated.name
+                        db.update(group)
+                    } else {
+                        HttpStatusCode.BadRequest
+                    }
+                }
+            }
+        }
+
         get("/groups/{id}/messages") {
             respond {
+                db.group(me.id!!, call.parameters["id"]!!)?.let {
+                    db.messages(it.group!!.id!!)
+                } ?: HttpStatusCode.NotFound
+            }
+        }
+
+        get("/groups/{id}/members") {
+            respond {
+                // todo verify I'm in this group before returning members
                 db.group(me.id!!, call.parameters["id"]!!)?.let {
                     db.messages(it.group!!.id!!)
                 } ?: HttpStatusCode.NotFound

@@ -68,9 +68,9 @@ fun Route.cardRoutes() {
         post("/cards") {
             respond {
                 val person = me
-                val card = call.receiveNullable<Card>()
+                val card = call.receive<Card>()
 
-                val parentCard = card?.parent?.let {
+                val parentCard = card.parent?.let {
                     db.document(Card::class, it)
                 }
 
@@ -84,9 +84,9 @@ fun Route.cardRoutes() {
                     db.insert(
                         Card(
                             person.id!!,
-                            name = card?.name ?: person.name,
+                            name = card.name ?: person.name,
                             parent = parentCard?.id,
-                            equipped = card?.equipped,
+                            equipped = card.equipped,
                             active = false
                         )
                     )
