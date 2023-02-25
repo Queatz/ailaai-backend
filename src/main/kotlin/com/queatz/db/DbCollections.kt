@@ -19,6 +19,9 @@ fun collections() = listOf(
     Invite::class.db {
         ensurePersistentIndex(listOf(Invite::code.name), PersistentIndexOptions())
     },
+    Save::class.db {
+        ensurePersistentIndex(listOf(Save::person.name), PersistentIndexOptions())
+    },
     Card::class.db {
         ensurePersistentIndex(listOf(Card::person.name), PersistentIndexOptions())
         ensureFulltextIndex(listOf(Card::conversation.name), FulltextIndexOptions())

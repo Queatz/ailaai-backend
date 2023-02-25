@@ -38,6 +38,60 @@ fun Db.cardsOfPerson(person: String) = list(
     )
 )
 
+fun Db.savesOfPerson(person: String, search: String? = null) = query(
+    SaveAndCard::class,
+    """
+        for save in `${Save::class.collection()}`
+            for x in `${Card::class.collection()}`
+            filter x._key == save.${f(Save::card)}
+                and save.${f(Save::person)} == @person
+                and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
+            sort save.${f(Save::createdAt)} desc
+            return {
+                save: save,
+                card: merge(
+                    x,
+                    {
+                        cardCount: count(for card in `${Card::class.collection()}` filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                    }
+                )
+            }
+    """.trimIndent(),
+    mapOf(
+        "person" to person,
+        "search" to search?.lowercase()
+    )
+)
+
+fun Db.saveCard(person: String, card: String) = one(
+    Save::class,
+    """
+            upsert { ${f(Save::person)}: @person, ${f(Save::card)}: @card }
+                insert { ${f(Save::person)}: @person, ${f(Save::card)}: @card, ${f(Save::createdAt)}: DATE_ISO8601(DATE_NOW()) }
+                update { ${f(Save::person)}: @person, ${f(Save::card)}: @card}
+                in @@collection
+                return NEW || OLD
+        """,
+    mapOf(
+        "person" to person,
+        "card" to card
+    )
+)
+
+fun Db.unsaveCard(person: String, card: String) = query(
+    Save::class,
+    """
+            for x in `${Save::class.collection()}`
+                filter x.${f(Save::person)} == @person
+                    and x.${f(Save::card)} == @card
+                remove x in `${Save::class.collection()}`
+        """,
+    mapOf(
+        "person" to person,
+        "card" to card
+    )
+)
+
 fun Db.updateEquippedCards(person: String, geo: List<Double>) = query(
     Card::class,
     """
@@ -58,7 +112,7 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
         for x in @@collection
             filter x.${f(Card::active)} == true
                 and x.${f(Card::parent)} == null
-                and (@search == null or contains(lower(x.${f(Card::conversation)}), @search) or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search))
+                and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
             sort distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             limit @offset, @limit
             return merge(
@@ -285,4 +339,9 @@ class GroupExtended(
 class MemberAndPerson(
     var person: Person? = null,
     var member: Member? = null
+)
+
+class SaveAndCard(
+    var save: Person? = null,
+    var card: Card? = null
 )

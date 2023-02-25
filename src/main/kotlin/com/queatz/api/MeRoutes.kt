@@ -46,6 +46,15 @@ fun Route.meRoutes() {
             }
         }
 
+        get("/me/saved") {
+            respond {
+                db.savesOfPerson(
+                    me.id!!,
+                    call.parameters["search"],
+                )
+            }
+        }
+
         post("/me") {
             respond {
                 val update = call.receive<Person>()

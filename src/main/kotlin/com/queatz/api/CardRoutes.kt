@@ -218,6 +218,34 @@ fun Route.cardRoutes() {
                 }
             }
         }
+
+        post("/cards/{id}/save") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    db.saveCard(person.id!!, card.id!!)
+                    HttpStatusCode.OK
+                }
+            }
+        }
+
+        post("/cards/{id}/unsave") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    db.unsaveCard(person.id!!, card.id!!)
+                    HttpStatusCode.OK
+                }
+            }
+        }
     }
 }
 
