@@ -12,7 +12,7 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
 
-data class CreateGroupBody(val people: List<String>)
+data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
 fun Route.groupRoutes() {
     authenticate {
@@ -31,9 +31,13 @@ fun Route.groupRoutes() {
                 call.receive<CreateGroupBody>().let {
                     val people = it.people + me.id!!
 
-                    if (people.size > 20) {
+                    if (people.size > 50) {
                         HttpStatusCode.BadRequest.description("Too many people")
-                    } else db.group(it.people) ?: app.createGroup(people)
+                    } else if (it.reuse) {
+                        db.group(it.people) ?: app.createGroup(people)
+                    } else {
+                        app.createGroup(people)
+                    }
                 }
             }
         }

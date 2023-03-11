@@ -56,7 +56,8 @@ fun Route.cardRoutes() {
 
                 db.updateEquippedCards(me.id!!, geo)
 
-                db.cards(
+                db.cardsOfFriends(
+                    me.id!!,
                     geo,
                     call.parameters["search"],
                     call.parameters["offset"]?.toInt() ?: 0,

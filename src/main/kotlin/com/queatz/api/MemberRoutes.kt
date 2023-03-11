@@ -1,8 +1,7 @@
 package com.queatz.api
 
-import com.queatz.db.Member
-import com.queatz.db.Person
-import com.queatz.db.asId
+import com.queatz.db.*
+import com.queatz.plugins.app
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
@@ -14,6 +13,27 @@ import io.ktor.server.routing.*
 
 fun Route.memberRoutes() {
     authenticate {
+        post("/members") {
+            respond {
+                val newMember = call.receive<Member>()
+                if (newMember.id != null) {
+                    HttpStatusCode.BadRequest.description("'id' cannot be specified")
+                } else if (newMember.from == null) {
+                    HttpStatusCode.BadRequest.description("'from' is missing")
+                } else if (newMember.to == null) {
+                    HttpStatusCode.BadRequest.description("'to' is missing")
+                } else if (db.member(newMember.from!!, newMember.to!!) != null) {
+                    HttpStatusCode.Forbidden.description("Member is already in group")
+                } else if (db.group(me.id!!, newMember.to!!) == null) {
+                    HttpStatusCode.NotFound.description("Group not found")
+                } else if (db.document(Person::class, newMember.from!!) == null) {
+                    HttpStatusCode.NotFound.description("Person not found")
+                } else {
+                    app.createMember(newMember.from!!, newMember.to!!)
+                }
+            }
+        }
+
         post("/members/{id}") {
             respond {
                 val member = db.document(Member::class, call.parameters["id"]!!)
