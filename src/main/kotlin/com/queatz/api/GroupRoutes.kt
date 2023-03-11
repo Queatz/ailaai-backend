@@ -107,7 +107,7 @@ fun Route.groupRoutes() {
                         PushAction.Message, MessagePushData(
                             Group().apply { id = group.id },
                             Person(name = me.name).apply { id = me.id },
-                            Message(text = message.text?.ellipsize())
+                            Message(text = message.text?.ellipsize(), attachment = message.attachment)
                         )
                     )
 

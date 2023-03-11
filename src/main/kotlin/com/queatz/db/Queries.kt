@@ -112,6 +112,8 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
         for x in @@collection
             filter x.${f(Card::active)} == true
                 and x.${f(Card::parent)} == null
+                and x.${f(Card::geo)} != null
+                and x.${f(Card::offline)} != true
                 and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
             sort distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             limit @offset, @limit

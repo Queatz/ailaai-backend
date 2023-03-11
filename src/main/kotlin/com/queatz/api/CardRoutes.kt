@@ -84,7 +84,7 @@ fun Route.cardRoutes() {
                     db.insert(
                         Card(
                             person.id!!,
-                            name = card.name ?: person.name,
+                            name = card.name,
                             parent = parentCard?.id,
                             equipped = card.equipped,
                             active = false
@@ -142,6 +142,7 @@ fun Route.cardRoutes() {
                     check(Card::active)
                     check(Card::geo) { card.parent = update.parent }
                     check(Card::location)
+                    check(Card::offline)
                     check(Card::name)
                     check(Card::conversation)
                     check(Card::photo)
