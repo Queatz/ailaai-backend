@@ -8,6 +8,9 @@ val Db.totalPeople
         """
     ).first()!!
 
+/**
+ * @code The code of the invite to fetch
+ */
 fun Db.invite(code: String) = one(
     Invite::class,
     """
@@ -20,6 +23,9 @@ fun Db.invite(code: String) = one(
     )
 )
 
+/**
+ * @person The current user
+ */
 fun Db.cardsOfPerson(person: String) = list(
     Card::class,
     """
@@ -29,7 +35,7 @@ fun Db.cardsOfPerson(person: String) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
                 }
             )
     """.trimIndent(),
@@ -38,6 +44,10 @@ fun Db.cardsOfPerson(person: String) = list(
     )
 )
 
+/**
+ * @person The current user
+ * @search Optionally filter cards
+ */
 fun Db.savesOfPerson(person: String, search: String? = null) = query(
     SaveAndCard::class,
     """
@@ -63,6 +73,10 @@ fun Db.savesOfPerson(person: String, search: String? = null) = query(
     )
 )
 
+/**
+ * @person The current user
+ * @card The card to save
+ */
 fun Db.saveCard(person: String, card: String) = one(
     Save::class,
     """
@@ -78,6 +92,10 @@ fun Db.saveCard(person: String, card: String) = one(
     )
 )
 
+/**
+ * @person The current user
+ * @card The card to unsave
+ */
 fun Db.unsaveCard(person: String, card: String) = query(
     Save::class,
     """
@@ -92,6 +110,10 @@ fun Db.unsaveCard(person: String, card: String) = query(
     )
 )
 
+/**
+ * @person The current user
+ * @geo The current user's geolocation
+ */
 fun Db.updateEquippedCards(person: String, geo: List<Double>) = query(
     Card::class,
     """
@@ -106,6 +128,14 @@ fun Db.updateEquippedCards(person: String, geo: List<Double>) = query(
     )
 )
 
+/**
+ * @person The current user
+ * @geo The geolocation bias
+ * @search Optionally filter cards
+ * @nearbyMaxDistance Optionally include cards nearby that may not be of the current user's friends
+ * @offset Page offset
+ * @limit Page size
+ */
 fun Db.cardsOfFriends(person: String, geo: List<Double>, search: String? = null, nearbyMaxDistance: Int = 0, offset: Int = 0, limit: Int = 20) = list(
     Card::class,
     """
@@ -170,6 +200,10 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
     )
 )
 
+/**
+ * @card The card
+ * @person The current user
+ */
 fun Db.cardsOfCard(card: String, person: String?) = list(
     Card::class,
     """
@@ -180,7 +214,7 @@ fun Db.cardsOfCard(card: String, person: String?) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
                 }
             )
     """.trimIndent(),
@@ -190,6 +224,9 @@ fun Db.cardsOfCard(card: String, person: String?) = list(
     )
 )
 
+/**
+ * @card The card to fetch all cards off
+ */
 fun Db.allCardsOfCard(card: String) = list(
     Card::class,
     """
@@ -202,6 +239,9 @@ fun Db.allCardsOfCard(card: String) = list(
     )
 )
 
+/**
+ * @person The current user
+ */
 fun Db.groups(person: String) = query(
     GroupExtended::class,
     """
@@ -233,6 +273,10 @@ fun Db.groups(person: String) = query(
     )
 )
 
+/**
+ * @person The current user
+ * @group The group to fetch
+ */
 fun Db.group(person: String, group: String) = query(
     GroupExtended::class,
     """
@@ -264,6 +308,9 @@ fun Db.group(person: String, group: String) = query(
     )
 ).firstOrNull()
 
+/**
+ * The current user
+ */
 fun Db.transferOfPerson(person: String) = one(
     Transfer::class,
     """
@@ -275,6 +322,10 @@ fun Db.transferOfPerson(person: String) = one(
         "person" to person
     )
 )
+
+/**
+ * @code the code of the transfer to fetch
+ */
 fun Db.transferWithCode(code: String) = one(
     Transfer::class,
     """
@@ -287,6 +338,9 @@ fun Db.transferWithCode(code: String) = one(
     )
 )
 
+/**
+ * @group The group to fetch devices for
+ */
 fun Db.memberDevices(group: String) = query(
     MemberDevice::class,
     """
@@ -306,6 +360,10 @@ fun Db.memberDevices(group: String) = query(
     )
 )
 
+/**
+ * @person The person in the group
+ * @group The group
+ */
 fun Db.member(person: String, group: String) = one(
     Member::class,
     """
@@ -319,6 +377,11 @@ fun Db.member(person: String, group: String) = one(
     )
 )
 
+/**
+ * @people The list of all people in the group
+ *
+ * @return The most recently active group with all these people, or null
+ */
 fun Db.group(people: List<String>) = one(
     Group::class,
     """
