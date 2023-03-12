@@ -106,16 +106,17 @@ fun Db.updateEquippedCards(person: String, geo: List<Double>) = query(
     )
 )
 
-fun Db.cardsOfFriends(person: String, geo: List<Double>, search: String? = null, offset: Int = 0, limit: Int = 20) = list(
+fun Db.cardsOfFriends(person: String, geo: List<Double>, search: String? = null, nearbyMaxDistance: Int = 0, offset: Int = 0, limit: Int = 20) = list(
     Card::class,
     """
         for x in @@collection
+            let d = distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             filter x.${f(Card::active)} == true
                 and x.${f(Card::parent)} == null
                 and x.${f(Card::geo)} != null
                 and x.${f(Card::offline)} != true
                 and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
-                and first(
+                and (d <= @nearbyMaxDistance or first(
                     for group in `${Group::class.collection()}`
                         for person, member in inbound group graph `${Member::class.graph()}`
                                 filter member.${f(Member::gone)} != true and person._key == @person
@@ -123,8 +124,8 @@ fun Db.cardsOfFriends(person: String, geo: List<Double>, search: String? = null,
                                     filter member2.${f(Member::gone)} != true and friend._key == x.${f(Card::person)}
                                 limit 1
                                 return true
-                ) == true
-            sort distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
+                ) == true)
+            sort d
             limit @offset, @limit
             return merge(
                 x,
@@ -137,6 +138,7 @@ fun Db.cardsOfFriends(person: String, geo: List<Double>, search: String? = null,
         "person" to person,
         "geo" to geo,
         "search" to search?.lowercase(),
+        "nearbyMaxDistance" to nearbyMaxDistance,
         "offset" to offset,
         "limit" to limit
     )

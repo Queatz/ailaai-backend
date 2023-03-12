@@ -51,17 +51,18 @@ fun Route.cardRoutes() {
                 val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
 
                 if (geo.size != 2) {
-                    return@respond HttpStatusCode.BadRequest
+                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
                 }
 
                 db.updateEquippedCards(me.id!!, geo)
 
                 db.cardsOfFriends(
-                    me.id!!,
-                    geo,
-                    call.parameters["search"],
-                    call.parameters["offset"]?.toInt() ?: 0,
-                    call.parameters["limit"]?.toInt() ?: 20
+                    person = me.id!!,
+                    geo = geo,
+                    search = call.parameters["search"],
+                    nearbyMaxDistance = 1000,
+                    offset = call.parameters["offset"]?.toInt() ?: 0,
+                    limit = call.parameters["limit"]?.toInt() ?: 20
                 )
             }
         }
