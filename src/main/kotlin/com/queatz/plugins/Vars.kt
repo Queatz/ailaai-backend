@@ -18,3 +18,4 @@ val secrets = try {
 val db = Db()
 val push = Push()
 val app = App()
+val json = Gson()

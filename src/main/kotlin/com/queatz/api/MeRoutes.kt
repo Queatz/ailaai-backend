@@ -46,6 +46,12 @@ fun Route.meRoutes() {
             }
         }
 
+        get("/me/collaborations") {
+            respond {
+                db.collaborationsOfPerson(me.id!!)
+            }
+        }
+
         get("/me/saved") {
             respond {
                 db.savesOfPerson(

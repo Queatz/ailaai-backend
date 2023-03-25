@@ -177,6 +177,9 @@ class Push {
                     throwable.printStackTrace()
                 }
             }
+            else -> {
+                // Push is unsupported
+            }
         }
     }
 }

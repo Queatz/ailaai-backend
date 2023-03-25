@@ -7,8 +7,6 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.util.pipeline.*
-import java.util.*
-import java.util.concurrent.TimeUnit
 
 private val jwt = object {
     val secret = secrets.jwt.secret
@@ -44,7 +42,7 @@ fun jwt(id: String) = JWT.create()
     .withAudience(jwt.audience)
     .withIssuer(jwt.issuer)
     .withClaim("id", id)
-    .withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(180)))
+    //.withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(180)))
     .sign(Algorithm.HMAC256(jwt.secret))!!
 
 val PipelineContext<*, ApplicationCall>.me

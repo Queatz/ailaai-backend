@@ -80,14 +80,14 @@ fun Route.cardRoutes() {
                     return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
                 }
 
-                if (parentCard != null && parentCard.person!!.asKey() != me.id) {
+                if (parentCard?.isMineOrIAmCollaborator(me) != true) {
                     HttpStatusCode.Forbidden
                 } else {
                     db.insert(
                         Card(
                             person.id!!,
                             name = card.name,
-                            parent = parentCard?.id,
+                            parent = parentCard.id,
                             equipped = card.equipped,
                             active = false
                         )
@@ -131,8 +131,9 @@ fun Route.cardRoutes() {
 
                     if (update.parent != null) {
                         val parent = db.document(Card::class, call.parameters["id"]!!)
+                            ?: return@respond HttpStatusCode.NotFound.description("Parent card not found")
 
-                        if (parent!!.person != card.person) {
+                        if (!parent.isMineOrIAmCollaborator(me)) {
                             return@respond HttpStatusCode.Forbidden
                         }
                     }
@@ -141,9 +142,25 @@ fun Route.cardRoutes() {
                         return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
                     }
 
+                    // Remove any cards of added collaborators
+                    if (update.collaborators != null) {
+                        val removedCollaborators = (card.collaborators ?: emptyList()).toSet() - update.collaborators!!.toSet()
+                        if (removedCollaborators.isNotEmpty()) {
+                            val childCards = db.allCardsOfCard(card.id!!)
+                            childCards.forEach { childCard ->
+                                if (childCard.person in removedCollaborators) {
+                                    childCard.parent = null
+                                    childCard.offline = true
+                                    db.update(childCard)
+                                }
+                            }
+                        }
+                    }
+
                     check(Card::active)
                     check(Card::geo) { card.parent = update.parent }
                     check(Card::location)
+                    check(Card::collaborators)
                     check(Card::offline)
                     check(Card::name)
                     check(Card::conversation)
@@ -253,3 +270,5 @@ fun Route.cardRoutes() {
 }
 
 private fun Card.isActiveOrMine(me: Person?) = person!!.asKey() == me?.id || active == true
+
+private fun Card.isMineOrIAmCollaborator(me: Person) = person!!.asKey() == me.id!! || collaborators?.contains(me.id!!) == true

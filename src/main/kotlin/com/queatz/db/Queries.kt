@@ -46,6 +46,28 @@ fun Db.cardsOfPerson(person: String) = list(
 
 /**
  * @person The current user
+ */
+fun Db.collaborationsOfPerson(person: String) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::person)} == @person
+                or @person in x.${f(Card::collaborators)}
+            sort x.${f(Card::createdAt)} desc
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
+                }
+            )
+    """.trimIndent(),
+    mapOf(
+        "person" to person
+    )
+)
+
+/**
+ * @person The current user
  * @search Optionally filter cards
  */
 fun Db.savesOfPerson(person: String, search: String? = null) = query(
@@ -331,6 +353,7 @@ fun Db.transferWithCode(code: String) = one(
     """
         for x in @@collection
             filter x.${f(Transfer::code)} == @code
+            limit 1
             return x
     """.trimIndent(),
     mapOf(
@@ -433,6 +456,21 @@ fun Db.updateDevice(person: String, type: DeviceType, token: String) = one(
         "token" to token
     )
 )
+
+fun Db.device(type: DeviceType, token: String) = one(
+    Device::class,
+        """
+            upsert { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
+                insert { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Person::createdAt)}: DATE_ISO8601(DATE_NOW()) }
+                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token}
+                in @@collection
+                return NEW || OLD
+        """,
+    mapOf(
+        "type" to type,
+        "token" to token
+    )
+)!!
 
 class MemberDevice(
     var member: Member? = null,

@@ -29,6 +29,7 @@ fun Application.configureRouting() {
         groupRoutes()
         memberRoutes()
         messageRoutes()
+        wildRoutes()
 
         static("/static") {
             files("static")

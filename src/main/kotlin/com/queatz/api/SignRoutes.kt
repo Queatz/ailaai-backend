@@ -27,10 +27,10 @@ fun Route.signRoutes() {
                 val invite = db.invite(code)
 
                 if (invite == null) {
-                    HttpStatusCode.Unauthorized
+                    HttpStatusCode.NotFound.description("Invite not found")
                 } else if (invite.createdAt!! < Clock.System.now().minus(2.days)) {
                     db.delete(invite)
-                    HttpStatusCode.Unauthorized
+                    HttpStatusCode.NotFound.description("Invite expired")
                 } else {
                     val person = db.insert(Person(seen = Clock.System.now(), inviter = invite.person))
 
@@ -46,17 +46,17 @@ fun Route.signRoutes() {
 
     post("/sign/in") {
         respond {
-            val code = call.receive<SignUpRequest>().code
+            val code = call.receive<SignInRequest>().code
 
             val transfer = db.transferWithCode(code)
 
             if (transfer == null) {
-                HttpStatusCode.Unauthorized
+                HttpStatusCode.NotFound.description("Transfer code '$code' not found")
             } else {
                 val person = db.document(Person::class, transfer.person!!)
 
                 if (person == null) {
-                    HttpStatusCode.NotFound
+                    HttpStatusCode.NotFound.description("Transfer code is orphaned")
                 } else {
                     db.delete(transfer)
 
