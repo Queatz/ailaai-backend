@@ -262,6 +262,21 @@ fun Db.allCardsOfCard(card: String) = list(
 )
 
 /**
+ * @people The list of people to fetch
+ */
+fun Db.people(people: List<String>) = list(
+    Person::class,
+    """
+        for x in @@collection
+            filter x._key in @people
+            return x
+    """.trimIndent(),
+    mapOf(
+        "people" to people
+    )
+)
+
+/**
  * @person The current user
  */
 fun Db.groups(person: String) = query(
@@ -382,6 +397,24 @@ fun Db.memberDevices(group: String) = query(
         "group" to group.asId(Group::class)
     )
 )
+/**
+ * @people The people to fetch devices for
+ */
+fun Db.peopleDevices(people: List<String>) = list(
+    Device::class,
+    """
+        for device in @@collection
+            filter device.${f(Device::person)} in @people
+            return device
+    """.trimIndent(),
+    mapOf(
+        "people" to people.map { it.asId(Person::class).also {
+            println("Notifying person $it")
+        } }
+    )
+).also {
+    println("Notifying ${it.size} device(s)")
+}
 
 /**
  * @person The person in the group

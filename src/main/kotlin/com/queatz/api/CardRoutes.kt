@@ -1,5 +1,6 @@
 package com.queatz.api
 
+import com.queatz.*
 import com.queatz.db.*
 import com.queatz.plugins.*
 import io.ktor.http.*
@@ -109,6 +110,21 @@ fun Route.cardRoutes() {
             }
         }
 
+        get("/cards/{id}/people") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.active != true && !card.isMineOrIAmCollaborator(person)) {
+                    HttpStatusCode.NotFound
+                } else {
+                    db.people((card.collaborators ?: emptyList()) + card.person!!)
+                }
+            }
+        }
+
         post("/cards/{id}") {
             respond {
                 val card = db.document(Card::class, call.parameters["id"]!!)
@@ -130,7 +146,7 @@ fun Route.cardRoutes() {
                     }
 
                     if (update.parent != null) {
-                        val parent = db.document(Card::class, call.parameters["id"]!!)
+                        val parent = db.document(Card::class, update.parent!!)
                             ?: return@respond HttpStatusCode.NotFound.description("Parent card not found")
 
                         if (!parent.isMineOrIAmCollaborator(me)) {
@@ -145,6 +161,9 @@ fun Route.cardRoutes() {
                     // Remove any cards of added collaborators
                     if (update.collaborators != null) {
                         val removedCollaborators = (card.collaborators ?: emptyList()).toSet() - update.collaborators!!.toSet()
+                        removedCollaborators.forEach { removedPerson ->
+                            notifyCollaboratorRemoved(person, card.people(), card, removedPerson)
+                        }
                         if (removedCollaborators.isNotEmpty()) {
                             val childCards = db.allCardsOfCard(card.id!!)
                             childCards.forEach { childCard ->
@@ -155,21 +174,81 @@ fun Route.cardRoutes() {
                                 }
                             }
                         }
+                        val addedCollaborators = update.collaborators!!.toSet() - (card.collaborators ?: emptyList()).toSet()
+                        addedCollaborators.forEach { addedPerson ->
+                            notifyCollaboratorAdded(person, card.people() + addedCollaborators, card, addedPerson)
+                        }
                     }
+
+                    // Collaboration notifications
+
+                    if (update.parent != null && update.parent != card.parent) {
+                        val newParentCard = db.document(Card::class, update.parent!!)!!
+
+                        if (card.active == true) {
+                            notifyCardAddedToCard(person, newParentCard.people(), newParentCard, card)
+                        }
+                    } else if (card.parent != null) {
+                        val parentCard = db.document(Card::class, card.parent!!)!!
+
+                        if (update.active != null && update.active != card.active) {
+                            if (update.active == true) {
+                                notifyCardAddedToCard(person, parentCard.people(), parentCard, card)
+                            } else if (update.active == false) {
+                                notifyCardRemovedFromCard(person, parentCard.people(), parentCard, card)
+                            }
+                        } else if (card.active == true) {
+                            // todo also notify changes to the actual card, not just the parent
+                            if (update.name != null && update.name != card.name) {
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Name)
+                            }
+                            if (update.photo != null && update.photo != card.photo) {
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Photo)
+                            }
+                            if (update.conversation != null && update.conversation != card.conversation) {
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Conversation)
+                            }
+                            if (update.location != null && update.location != card.location) {
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Location)
+                            }
+                        }
+                    }
+
+                    if (card.active == true) {
+                        if (update.name != null && update.name != card.name) {
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Name)
+                        }
+                        if (update.photo != null && update.photo != card.photo) {
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
+                        }
+                        if (update.conversation != null && update.conversation != card.conversation) {
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Conversation)
+                        }
+                        if (update.location != null && update.location != card.location) {
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Location)
+                        }
+                    }
+
+                    val previousParent = card.parent
 
                     check(Card::active)
                     check(Card::geo) { card.parent = update.parent }
                     check(Card::location)
                     check(Card::collaborators)
-                    check(Card::offline)
+                    check(Card::offline) { card.parent = update.parent }
                     check(Card::name)
                     check(Card::conversation)
                     check(Card::photo)
                     check(Card::parent) { card.equipped = update.equipped }
-                    check(Card::equipped)
+                    check(Card::equipped) { card.parent = update.parent }
 
                     if (card.photo == null && card.active == true) {
                         card.active = false
+                    }
+
+                    if (card.parent == null && previousParent != null && card.active == true) {
+                        val parentCard = db.document(Card::class, previousParent)!!
+                        notifyCardRemovedFromCard(person, parentCard.people(), parentCard, card)
                     }
 
                     db.update(card)
@@ -226,11 +305,23 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    db.allCardsOfCard(card.id!!).onEach {
+                    db.allCardsOfCard(card.id!!).forEach {
                         it.parent = card.parent
+                        it.offline = card.offline
                         it.geo = card.geo
                         it.equipped = card.equipped
                         db.update(it)
+                    }
+
+                    if (card.parent != null) {
+                        db.document(Card::class, card.parent!!)?.let { parentCard ->
+                            notifyCardRemovedFromCard(
+                                person,
+                                parentCard.people(),
+                                parentCard,
+                                card
+                            )
+                        }
                     }
 
                     db.delete(card)
@@ -268,6 +359,120 @@ fun Route.cardRoutes() {
         }
     }
 }
+
+suspend fun notifyCardUpdated(me: Person, people: Set<String>, card: Card, details: CollaborationEventDataDetails) {
+    notifyCollaborators(
+        me,
+        people,
+        CollaborationPushData(
+            me,
+            Card().apply {
+                id = card.id
+                name = card.name
+            },
+            CollaborationEvent.UpdatedCard,
+            CollaborationEventData(details = details)
+        )
+    )
+}
+
+suspend fun notifyCardInCardUpdated(me: Person, people: Set<String>, card: Card, updatedCard: Card, details: CollaborationEventDataDetails) {
+    notifyCollaborators(
+        me,
+        people,
+        CollaborationPushData(
+            me,
+            Card().apply {
+                id = card.id
+                name = card.name
+            },
+            CollaborationEvent.UpdatedCard,
+            CollaborationEventData(updatedCard, details = details)
+        )
+    )
+}
+
+suspend fun notifyCardAddedToCard(me: Person, people: Set<String>, card: Card, addedCard: Card) {
+    notifyCollaborators(
+        me,
+        people,
+        CollaborationPushData(
+            Person().apply { id = me.id },
+            Card().apply {
+                id = card.id
+                name = card.name
+            },
+            CollaborationEvent.AddedCard,
+            CollaborationEventData(addedCard)
+        )
+    )
+}
+
+suspend fun notifyCardRemovedFromCard(me: Person, people: Set<String>, card: Card, removedCard: Card) {
+    notifyCollaborators(
+        me,
+        people,
+        CollaborationPushData(
+            Person().apply { id = me.id },
+            Card().apply {
+                id = card.id
+                name = card.name
+            },
+            CollaborationEvent.RemovedCard,
+            CollaborationEventData(removedCard)
+        )
+    )
+}
+
+suspend fun notifyCollaboratorAdded(me: Person, people: Set<String>, card: Card, personId: String) {
+    notifyCollaborators(
+        me,
+        people,
+        CollaborationPushData(
+            Person().apply { id = me.id },
+            Card().apply {
+                id = card.id
+                name = card.name
+            },
+            CollaborationEvent.AddedPerson,
+            CollaborationEventData(person = Person().apply {
+                id = personId
+                name = db.document(Person::class, personId)?.name
+            })
+        )
+    )
+}
+
+suspend fun notifyCollaboratorRemoved(me: Person, people: Set<String>, card: Card, personId: String) {
+    notifyCollaborators(
+        me,
+        people,
+        CollaborationPushData(
+            Person().apply { id = me.id },
+            Card().apply {
+                id = card.id
+                name = card.name
+            },
+            CollaborationEvent.RemovedPerson,
+            CollaborationEventData(person = Person().apply {
+                id = personId
+                name = db.document(Person::class, personId)?.name
+            })
+        )
+    )
+}
+
+suspend fun notifyCollaborators(me: Person, people: Set<String>, collaborationPushData: CollaborationPushData) {
+    val pushData = PushData(action = PushAction.Collaboration, data = collaborationPushData)
+    db.peopleDevices(people.filter { it != me.id }.also {
+        println("Notifying ${it.size} collaborator(s)")
+    }).forEach { device ->
+        println("Notifying collaborator ${device.person}'s ${device.type} device")
+        push.sendPush(device, pushData)
+    }
+}
+
+private fun Card.people() = (collaborators ?: emptyList()).toSet() + person!!
 
 private fun Card.isActiveOrMine(me: Person?) = person!!.asKey() == me?.id || active == true
 

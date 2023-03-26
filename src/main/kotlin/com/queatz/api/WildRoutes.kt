@@ -25,7 +25,7 @@ fun Route.wildRoutes() {
             val card = db.document(Card::class, wildReply.card) ?: return@respond HttpStatusCode.NotFound.description("Card not found")
             var wildDevice = db.device(DeviceType.Web, wildReply.device)
             val wildPerson: Person = if (wildDevice.person == null) {
-                db.insert(Person(name = "Web message", seen = Clock.System.now())).also {
+                db.insert(Person(source = PersonSource.Web, name = "Web message", seen = Clock.System.now())).also {
                     wildDevice.person = it.id
                     wildDevice = db.update(wildDevice)
                 }

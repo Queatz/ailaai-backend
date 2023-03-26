@@ -10,7 +10,8 @@ class Person(
     var name: String? = null,
     var photo: String? = null,
     var inviter: String? = null,
-    var seen: Instant? = null
+    var seen: Instant? = null,
+    var source: PersonSource? = null
 ) : Model()
 
 class Settings(
@@ -77,6 +78,10 @@ class Device(
 enum class DeviceType {
     Hms,
     Gms,
+    Web
+}
+
+enum class PersonSource {
     Web
 }
 

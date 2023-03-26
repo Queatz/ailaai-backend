@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import com.queatz.db.*
 import com.queatz.plugins.InstantTypeConverter
+import com.queatz.plugins.json
 import com.queatz.plugins.secrets
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -134,6 +135,8 @@ class Push {
     }
 
     suspend fun sendPush(device: Device, pushData: PushData) {
+        println("Sending push to ${json.toJson(device)}:")
+        println(json.toJson(pushData))
         when (device.type!!) {
             DeviceType.Hms -> {
                 try {
@@ -185,7 +188,8 @@ class Push {
 }
 
 enum class PushAction {
-    Message
+    Message,
+    Collaboration
 }
 
 data class PushData(
@@ -197,6 +201,34 @@ data class MessagePushData(
     val group: Group,
     val person: Person,
     val message: Message,
+)
+
+enum class CollaborationEvent {
+    AddedPerson,
+    RemovedPerson,
+    AddedCard,
+    RemovedCard,
+    UpdatedCard,
+}
+
+enum class CollaborationEventDataDetails {
+    Photo,
+    Conversation,
+    Name,
+    Location,
+}
+
+data class CollaborationEventData (
+    val card: Card? = null,
+    val person: Person? = null,
+    val details: CollaborationEventDataDetails? = null
+)
+
+data class CollaborationPushData(
+    val person: Person,
+    val card: Card,
+    val event: CollaborationEvent,
+    val data: CollaborationEventData,
 )
 
 data class OAuthResponse(
