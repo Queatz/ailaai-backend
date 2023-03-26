@@ -452,7 +452,7 @@ suspend fun notifyCollaboratorAdded(me: Person, people: Set<String>, card: Card,
             CollaborationEvent.AddedPerson,
             CollaborationEventData(person = Person().apply {
                 id = personId
-                name = db.document(Person::class, personId)?.name
+                name = db.document(Person::class, me.id!!)?.name
             })
         )
     )
