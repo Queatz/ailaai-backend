@@ -289,6 +289,13 @@ fun Route.cardRoutes() {
 
                         db.update(card)
 
+                        if (card.active == true) {
+                            card.parent?.let { db.document(Card::class, it) }?.let { parentCard ->
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Photo)
+                            }
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
+                        }
+
                         HttpStatusCode.NoContent
                     }
                 }
@@ -492,6 +499,6 @@ suspend fun notifyCollaborators(me: Person, people: Set<String>, collaborationPu
 
 private fun Card.people() = (collaborators ?: emptyList()).toSet() + person!!
 
-private fun Card.isActiveOrMine(me: Person?) = person!!.asKey() == me?.id || active == true
+private fun Card.isActiveOrMine(me: Person?) = (me != null && isMineOrIAmCollaborator(me)) || active == true
 
 private fun Card.isMineOrIAmCollaborator(me: Person) = person!!.asKey() == me.id!! || collaborators?.contains(me.id!!) == true
