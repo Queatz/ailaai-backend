@@ -365,7 +365,10 @@ suspend fun notifyCardUpdated(me: Person, people: Set<String>, card: Card, detai
         me,
         people,
         CollaborationPushData(
-            me,
+            Person().apply {
+                id = me.id
+                name = me.name
+            },
             Card().apply {
                 id = card.id
                 name = card.name
@@ -381,7 +384,10 @@ suspend fun notifyCardInCardUpdated(me: Person, people: Set<String>, card: Card,
         me,
         people,
         CollaborationPushData(
-            me,
+            Person().apply {
+                id = me.id
+                name = me.name
+            },
             Card().apply {
                 id = card.id
                 name = card.name
@@ -397,7 +403,10 @@ suspend fun notifyCardAddedToCard(me: Person, people: Set<String>, card: Card, a
         me,
         people,
         CollaborationPushData(
-            Person().apply { id = me.id },
+            Person().apply {
+                id = me.id
+                name = me.name
+            },
             Card().apply {
                 id = card.id
                 name = card.name
@@ -413,7 +422,10 @@ suspend fun notifyCardRemovedFromCard(me: Person, people: Set<String>, card: Car
         me,
         people,
         CollaborationPushData(
-            Person().apply { id = me.id },
+            Person().apply {
+                id = me.id
+                name = me.name
+            },
             Card().apply {
                 id = card.id
                 name = card.name
@@ -429,7 +441,10 @@ suspend fun notifyCollaboratorAdded(me: Person, people: Set<String>, card: Card,
         me,
         people,
         CollaborationPushData(
-            Person().apply { id = me.id },
+            Person().apply {
+                id = me.id
+                name = me.name
+            },
             Card().apply {
                 id = card.id
                 name = card.name
@@ -437,7 +452,7 @@ suspend fun notifyCollaboratorAdded(me: Person, people: Set<String>, card: Card,
             CollaborationEvent.AddedPerson,
             CollaborationEventData(person = Person().apply {
                 id = personId
-                name = db.document(Person::class, personId)?.name
+                name = db.document(Person::class, me.id!!)?.name
             })
         )
     )
@@ -448,7 +463,10 @@ suspend fun notifyCollaboratorRemoved(me: Person, people: Set<String>, card: Car
         me,
         people,
         CollaborationPushData(
-            Person().apply { id = me.id },
+            Person().apply {
+                id = me.id
+                name = me.name
+            },
             Card().apply {
                 id = card.id
                 name = card.name
