@@ -15,6 +15,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.random.Random
 
+private data class LeaveCollaborationBody(val card: String)
+
 fun Route.meRoutes() {
     authenticate {
         get("/me") {
@@ -49,6 +51,36 @@ fun Route.meRoutes() {
         get("/me/collaborations") {
             respond {
                 db.collaborationsOfPerson(me.id!!)
+            }
+        }
+
+        post("/me/collaborations/leave") {
+            respond {
+                val card = call.receive<LeaveCollaborationBody>().card.let {
+                    db.document(Card::class, it)
+                } ?: return@respond HttpStatusCode.NotFound.description("Card not found")
+
+
+                val person = me
+
+                if (card.collaborators?.contains(person.id!!) == true) {
+                    card.collaborators = card.collaborators!! - person.id!!
+                    db.update(card)
+                    notifyCollaboratorRemoved(me, card.people(), card, person.id!!)
+
+                    val childCards = db.allCardsOfCard(card.id!!)
+                    childCards.forEach { childCard ->
+                        if (childCard.person == person.id) {
+                            childCard.parent = null
+                            childCard.offline = true
+                            db.update(childCard)
+                        }
+                    }
+
+                    HttpStatusCode.NoContent
+                } else {
+                    HttpStatusCode.NotFound.description("Collaborator not found")
+                }
             }
         }
 

@@ -81,14 +81,14 @@ fun Route.cardRoutes() {
                     return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
                 }
 
-                if (parentCard?.isMineOrIAmCollaborator(me) != true) {
-                    HttpStatusCode.Forbidden
+                if (parentCard?.isMineOrIAmCollaborator(me) == false) {
+                    HttpStatusCode.Forbidden.description("Not a collaborator on this parent")
                 } else {
                     db.insert(
                         Card(
                             person.id!!,
                             name = card.name,
-                            parent = parentCard.id,
+                            parent = parentCard!!.id,
                             equipped = card.equipped,
                             active = false
                         )
@@ -497,8 +497,8 @@ suspend fun notifyCollaborators(me: Person, people: Set<String>, collaborationPu
     }
 }
 
-private fun Card.people() = (collaborators ?: emptyList()).toSet() + person!!
+fun Card.people() = (collaborators ?: emptyList()).toSet() + person!!
 
-private fun Card.isActiveOrMine(me: Person?) = (me != null && isMineOrIAmCollaborator(me)) || active == true
+fun Card.isActiveOrMine(me: Person?) = (me != null && isMineOrIAmCollaborator(me)) || active == true
 
-private fun Card.isMineOrIAmCollaborator(me: Person) = person!!.asKey() == me.id!! || collaborators?.contains(me.id!!) == true
+fun Card.isMineOrIAmCollaborator(me: Person) = person!!.asKey() == me.id!! || collaborators?.contains(me.id!!) == true

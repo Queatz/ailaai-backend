@@ -2,9 +2,11 @@ package com.queatz.plugins
 
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.defaultheaders.*
+import org.slf4j.event.Level
 
 fun Application.configureHTTP() {
     install(CORS) {
@@ -15,4 +17,7 @@ fun Application.configureHTTP() {
     }
     install(Compression)
     install(DefaultHeaders)
+    install(CallLogging) {
+        level = Level.WARN
+    }
 }
