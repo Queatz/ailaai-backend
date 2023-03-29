@@ -24,6 +24,8 @@ fun collections() = listOf(
     },
     Card::class.db {
         ensurePersistentIndex(listOf(Card::person.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::name.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::location.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::collaborators.name), PersistentIndexOptions())
         ensureFulltextIndex(listOf(Card::conversation.name), FulltextIndexOptions())
         ensureGeoIndex(listOf(Card::geo.name), GeoIndexOptions())

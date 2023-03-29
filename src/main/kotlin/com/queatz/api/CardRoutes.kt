@@ -57,10 +57,10 @@ fun Route.cardRoutes() {
 
                 db.updateEquippedCards(me.id!!, geo)
 
-                db.cardsOfFriends(
+                db.explore(
                     person = me.id!!,
                     geo = geo,
-                    search = call.parameters["search"],
+                    search = call.parameters["search"]?.takeIf { it.isNotBlank() },
                     nearbyMaxDistance = 1000,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
@@ -88,7 +88,7 @@ fun Route.cardRoutes() {
                         Card(
                             person.id!!,
                             name = card.name,
-                            parent = parentCard!!.id,
+                            parent = parentCard?.id,
                             equipped = card.equipped,
                             active = false
                         )
@@ -232,15 +232,28 @@ fun Route.cardRoutes() {
                     val previousParent = card.parent
 
                     check(Card::active)
-                    check(Card::geo) { card.parent = update.parent }
+                    check(Card::geo) {
+                        card.parent = update.parent
+                        card.offline = update.offline
+                    }
                     check(Card::location)
                     check(Card::collaborators)
-                    check(Card::offline) { card.parent = update.parent }
+                    check(Card::offline) {
+                        card.parent = update.parent
+                        card.equipped = update.equipped
+                        card.geo = update.geo
+                    }
                     check(Card::name)
                     check(Card::conversation)
                     check(Card::photo)
-                    check(Card::parent) { card.equipped = update.equipped }
-                    check(Card::equipped) { card.parent = update.parent }
+                    check(Card::parent) {
+                        card.equipped = update.equipped
+                        card.offline = update.offline
+                    }
+                    check(Card::equipped) {
+                        card.parent = update.parent
+                        card.offline = update.offline
+                    }
 
                     if (card.photo == null && card.active == true) {
                         card.active = false

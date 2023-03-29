@@ -29,7 +29,7 @@ fun Route.groupRoutes() {
         post("/groups") {
             respond {
                 call.receive<CreateGroupBody>().let {
-                    val people = it.people + me.id!!
+                    val people = (it.people + me.id!!).toSet().toList()
 
                     if (people.size > 50) {
                         HttpStatusCode.BadRequest.description("Too many people")
@@ -44,7 +44,13 @@ fun Route.groupRoutes() {
 
         get("/groups/{id}") {
             respond {
-                db.group(me.id!!, call.parameters["id"]!!) ?: HttpStatusCode.NotFound
+                val person = me
+                db.group(me.id!!, call.parameters["id"]!!)?.also { group ->
+                    group.members?.find { it.person?.id == person.id }?.member?.let { member ->
+                        member.seen = Clock.System.now()
+                        db.update(member)
+                    }
+                } ?: HttpStatusCode.NotFound
             }
         }
 
