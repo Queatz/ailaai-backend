@@ -17,9 +17,7 @@ fun Application.configureRouting() {
         // Delete all expired invite codes every hour
     }
 
-    launch {
-        push.start()
-    }
+    push.start(this)
 
     routing {
         get("/hi") { call.respondText("{\"hi\": true}") }
@@ -30,6 +28,7 @@ fun Application.configureRouting() {
         memberRoutes()
         messageRoutes()
         wildRoutes()
+        hmsRoutes()
 
         static("/static") {
             files("static")

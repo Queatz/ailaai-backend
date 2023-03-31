@@ -168,7 +168,7 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
                 and x.${f(Card::offline)} != true
                 and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
-                and ((d != null and d <= @nearbyMaxDistance) or first(
+                and ((d != null and d <= @nearbyMaxDistance) or (x.${f(Card::equipped)} == true and first(
                     for group in `${Group::class.collection()}`
                         for person, member in inbound group graph `${Member::class.graph()}`
                                 filter member.${f(Member::gone)} != true and person._key == @person
@@ -176,7 +176,7 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
                                     filter member2.${f(Member::gone)} != true and friend._key == x.${f(Card::person)}
                                 limit 1
                                 return true
-                ) == true)
+                ) == true))
             sort d
             sort d == null
             limit @offset, @limit
@@ -483,9 +483,23 @@ fun Db.updateDevice(person: String, type: DeviceType, token: String) = one(
                 update { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Device::person)}: @person}
                 in @@collection
                 return NEW || OLD
-        """,
+        """.trimIndent(),
     mapOf(
         "person" to person.asId(Person::class),
+        "type" to type,
+        "token" to token
+    )
+)
+
+fun Db.deleteDevice(type: DeviceType, token: String) = query(
+    Device::class,
+    """
+        for x in ${Device::class.collection()}
+            filter x.${f(Device::type)} == @type
+                and x.${f(Device::token)} == @token
+            remove x in ${Device::class.collection()}
+    """.trimIndent(),
+    mapOf(
         "type" to type,
         "token" to token
     )

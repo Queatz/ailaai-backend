@@ -27,12 +27,18 @@ fun collections() = listOf(
         ensurePersistentIndex(listOf(Card::name.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::location.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::collaborators.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::equipped.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::conversation.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::offline.name), PersistentIndexOptions())
         ensureFulltextIndex(listOf(Card::conversation.name), FulltextIndexOptions())
         ensureGeoIndex(listOf(Card::geo.name), GeoIndexOptions())
     },
     Group::class.db {
         ensurePersistentIndex(listOf(Group::seen.name), PersistentIndexOptions())
     },
-    Member::class.db(CollectionType.EDGES, listOf(Group::class, Person::class)) {},
+    Member::class.db(CollectionType.EDGES, listOf(Group::class, Person::class)) {
+        ensurePersistentIndex(listOf(Member::gone.name), PersistentIndexOptions())
+
+    },
     Message::class.db {}
 )

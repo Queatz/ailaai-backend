@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import com.queatz.db.*
 import com.queatz.plugins.InstantTypeConverter
+import com.queatz.plugins.db
 import com.queatz.plugins.json
 import com.queatz.plugins.secrets
 import io.ktor.client.*
@@ -19,10 +20,7 @@ import io.ktor.http.*
 import io.ktor.serialization.gson.*
 import io.ktor.server.util.*
 import io.ktor.util.date.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
@@ -59,7 +57,16 @@ class Push {
     private var hmsToken: String? = null
     private var gmsToken: String? = null
 
-    suspend fun start() {
+    private lateinit var coroutineScope: CoroutineScope
+
+    fun start(coroutineScope: CoroutineScope) {
+        this.coroutineScope = coroutineScope
+        this.coroutineScope.launch {
+            start()
+        }
+    }
+
+    private suspend fun start() {
         withContext(Dispatchers.IO) {
             launch {
                 while (Thread.currentThread().isAlive) {
@@ -134,7 +141,14 @@ class Push {
         }
     }
 
-    suspend fun sendPush(device: Device, pushData: PushData) {
+    fun sendPush(device: Device, pushData: PushData) {
+        coroutineScope.launch(Dispatchers.IO) {
+            // Todo: Add to queue, retry, persist, etc.
+            doSendPush(device, pushData)
+        }
+    }
+
+    private suspend fun doSendPush(device: Device, pushData: PushData) {
         println("Sending push to ${json.toJson(device)}:")
         println(json.toJson(pushData))
         when (device.type!!) {
@@ -152,7 +166,7 @@ class Push {
                             )
                         )
                     }
-                    println(response)
+                    println(response.bodyAsText())
                 } catch (throwable: Throwable) {
                     throwable.printStackTrace()
                 }
@@ -174,16 +188,23 @@ class Push {
                                 )
                             )
                         )
-                    }.bodyAsText()
-                    println(response)
+                    }
+                    if (response.status == HttpStatusCode.NotFound) {
+                        onDeviceUnregistered(device)
+                    }
+                    println("FCM response: ${response.status} ${response.bodyAsText()}")
                 } catch (throwable: Throwable) {
                     throwable.printStackTrace()
                 }
             }
             else -> {
-                // Push is unsupported
+                println("Push notifications for $device are not supported")
             }
         }
+    }
+
+    private fun onDeviceUnregistered(device: Device) {
+        db.deleteDevice(device.type!!, device.token!!)
     }
 }
 
