@@ -72,10 +72,13 @@ fun Route.groupRoutes() {
 
                     if (groupUpdated.name != null) {
                         group.name = groupUpdated.name
-                        db.update(group)
-                    } else {
-                        HttpStatusCode.BadRequest
                     }
+
+                    if (groupUpdated.description != null) {
+                        group.description = groupUpdated.description
+                    }
+
+                    db.update(group)
                 }
             }
         }
