@@ -130,10 +130,13 @@ fun Route.groupRoutes() {
                 } else {
                     val parts = call.receiveMultipart().readAllParts()
 
-                    val photo = parts.find { it.name == "photo" } as? PartData.FileItem
+                    val match = "photo\\[(\\d+)]".toRegex()
+                    val photos = parts
+                        .filter { match.matches(it.name ?: "") }
+                        .mapNotNull { it as? PartData.FileItem  }
 
-                    if (photo == null) {
-                        HttpStatusCode.BadRequest.description("Missing 'photo'")
+                    if (photos.isEmpty()) {
+                        HttpStatusCode.BadRequest.description("Missing 'photo[0]'")
                     } else {
                         if (!File("./static/photos").isDirectory) {
                             File("./static/photos").mkdirs()
@@ -141,17 +144,24 @@ fun Route.groupRoutes() {
 
                         val group = db.document(Group::class, member.to!!)!!
 
-                        val fileName = "group-${group.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
-                        val file = File("./static/photos/${fileName}")
-
-                        withContext(Dispatchers.IO) {
-                            file.outputStream().write(photo.streamProvider().readBytes())
+                        val photosUrls = withContext(Dispatchers.IO) {
+                            photos.map { photo ->
+                                val fileName = "group-${group.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
+                                val file = File("./static/photos/${fileName}")
+                                file.outputStream().write(photo.streamProvider().readBytes())
+                                "/static/photos/${fileName}"
+                            }
                         }
 
-                        val photoUrl = "/static/photos/${fileName}"
-                        val message = db.insert(Message(member.to?.asKey(), member.id, null, json.toJson(PhotosAttachment(
-                            photos = listOf(photoUrl)
-                        ))))
+                        val message = db.insert(
+                            Message(
+                                member.to?.asKey(), member.id, null, json.toJson(
+                                    PhotosAttachment(
+                                        photos = photosUrls
+                                    )
+                                )
+                            )
+                        )
 
                         updateSeen(person, member, group)
                         notifyMessage(me, member, group, message)
