@@ -291,6 +291,7 @@ fun Db.groups(person: String) = query(
                 group,
                 members: (
                     for person, member in inbound group graph `${Member::class.graph()}`
+                        filter member.${f(Member::gone)} != true
                         sort member.${f(Member::seen)} desc
                         return {
                             person,
@@ -325,6 +326,7 @@ fun Db.group(person: String, group: String) = query(
                 group,
                 members: (
                     for person, member in inbound group graph `${Member::class.graph()}`
+                        filter member.${f(Member::gone)} != true
                         sort member.${f(Member::seen)} desc
                         return {
                             person,
@@ -425,7 +427,9 @@ fun Db.member(person: String, group: String) = one(
     Member::class,
     """
         for x in @@collection
-            filter x._from == @person and x._to == @group
+            filter x._from == @person
+                and x._to == @group
+                and x.${f(Member::gone)} != true
             return x
     """.trimIndent(),
     mapOf(

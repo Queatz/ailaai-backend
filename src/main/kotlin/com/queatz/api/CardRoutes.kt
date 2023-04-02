@@ -105,7 +105,7 @@ fun Route.cardRoutes() {
                 if (card == null) {
                     HttpStatusCode.NotFound
                 } else {
-                    db.group(listOf(me.id!!, card.person!!)) ?: app.createGroup(person.id!!, card.person!!)
+                    db.group(listOf(me.id!!, card.person!!)) ?: app.createGroup(listOf(person.id!!, card.person!!))
                 }
             }
         }

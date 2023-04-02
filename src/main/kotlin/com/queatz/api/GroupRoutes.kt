@@ -34,9 +34,9 @@ fun Route.groupRoutes() {
                     if (people.size > 50) {
                         HttpStatusCode.BadRequest.description("Too many people")
                     } else if (it.reuse) {
-                        db.group(it.people) ?: app.createGroup(people)
+                        db.group(it.people) ?: app.createGroup(people, hosts = me.id!!.let(::listOf))
                     } else {
-                        app.createGroup(people)
+                        app.createGroup(people, hosts = me.id!!.let(::listOf))
                     }
                 }
             }

@@ -29,7 +29,7 @@ fun Route.memberRoutes() {
                 } else if (db.document(Person::class, newMember.from!!) == null) {
                     HttpStatusCode.NotFound.description("Person not found")
                 } else {
-                    app.createMember(newMember.from!!, newMember.to!!)
+                    app.createMember(newMember.from!!, newMember.to!!, host = false)
                 }
             }
         }
@@ -63,11 +63,14 @@ fun Route.memberRoutes() {
 
                 if (member == null) {
                     HttpStatusCode.NotFound
-                } else if (member.from != me.id!!.asId(Person::class)) {
+                } else if (member.from != me.id!!.asId(Person::class) && !isGroupHost(me.id!!, member.to!!)) {
                     HttpStatusCode.Forbidden
                 } else {
                     member.hide = true
                     member.gone = true
+                    if (member.host == true) {
+                        member.host = false
+                    }
                     db.update(member)
                     HttpStatusCode.NoContent
                 }
@@ -75,3 +78,5 @@ fun Route.memberRoutes() {
         }
     }
 }
+
+fun isGroupHost(person: String, group: String) = db.member(person, group)?.host == true

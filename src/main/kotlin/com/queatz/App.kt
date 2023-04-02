@@ -8,22 +8,21 @@ import com.queatz.plugins.db
 import kotlinx.datetime.Clock
 
 class App {
-    fun createGroup(people: List<String>): Group = createGroup(*people.toTypedArray())
-
-    fun createGroup(vararg person: String): Group =
+    fun createGroup(people: List<String>, hosts: List<String> = emptyList()): Group =
         db.insert(Group(seen = Clock.System.now()))
             .also {
                 val group = it.id!!.asId(Group::class)
 
-                person.distinct().forEach {
-                    createMember(it, group)
+                people.distinct().forEach {
+                    createMember(it, group, host = hosts.contains(it).takeIf { it })
                 }
             }
 
-    fun createMember(person: String, group: String) = db.insert(
+    fun createMember(person: String, group: String, host: Boolean? = null) = db.insert(
         Member(
             from = person.asId(Person::class),
-            to = group.asId(Group::class)
+            to = group.asId(Group::class),
+            host = host
         )
     )
 }

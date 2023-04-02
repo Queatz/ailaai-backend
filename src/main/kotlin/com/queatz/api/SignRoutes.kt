@@ -36,7 +36,7 @@ fun Route.signRoutes() {
 
                     db.delete(invite)
 
-                    app.createGroup(person.id!!, invite.person!!)
+                    app.createGroup(listOf(person.id!!, invite.person!!))
 
                     TokenResponse(jwt(person.id!!))
                 }
