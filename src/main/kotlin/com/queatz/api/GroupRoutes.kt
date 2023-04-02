@@ -6,11 +6,16 @@ import com.queatz.PushData
 import com.queatz.db.*
 import com.queatz.plugins.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import java.io.File
+import kotlin.random.Random
 
 data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
@@ -102,45 +107,94 @@ fun Route.groupRoutes() {
                     HttpStatusCode.NotFound
                 } else {
                     db.insert(Message(member.to?.asKey(), member.id, message.text, message.attachment))
-
-                    member.seen = Clock.System.now()
-                    db.update(member)
-
-                    me.seen = Clock.System.now()
-                    db.update(me)
-
                     val group = db.document(Group::class, member.to!!)!!
-                    group.seen = Clock.System.now()
-                    db.update(group)
 
-                    val pushData = PushData(
-                        PushAction.Message, MessagePushData(
-                            Group().apply { id = group.id },
-                            Person(name = me.name).apply { id = me.id },
-                            Message(text = message.text?.ellipsize(), attachment = message.attachment)
-                        )
-                    )
-
-                    db.memberDevices(group.id!!).filter {
-                        it.member?.id != member.id
-                    }.apply {
-                        filter { it.member?.hide == true }.forEach {
-                            it.member!!.hide = false
-                            db.update(it.member!!)
-                        }
-
-                        forEach {
-                            it.devices?.forEach { device ->
-                                push.sendPush(device, pushData)
-                            }
-                        }
-                    }
+                    updateSeen(me, member, group)
+                    notifyMessage(me, member, group, message)
 
                     HttpStatusCode.OK
                 }
             }
         }
+
+        post("/groups/{id}/photos") {
+            respond {
+                val person = me
+                val member = db.member(person.id!!, call.parameters["id"]!!)
+
+                if (member == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    val parts = call.receiveMultipart().readAllParts()
+
+                    val photo = parts.find { it.name == "photo" } as? PartData.FileItem
+
+                    if (photo == null) {
+                        HttpStatusCode.BadRequest.description("Missing 'photo'")
+                    } else {
+                        if (!File("./static/photos").isDirectory) {
+                            File("./static/photos").mkdirs()
+                        }
+
+                        val group = db.document(Group::class, member.to!!)!!
+
+                        val fileName = "group-${group.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
+                        val file = File("./static/photos/${fileName}")
+
+                        withContext(Dispatchers.IO) {
+                            file.outputStream().write(photo.streamProvider().readBytes())
+                        }
+
+                        val photoUrl = "/static/photos/${fileName}"
+                        val message = db.insert(Message(member.to?.asKey(), member.id, null, json.toJson(PhotosAttachment(
+                            photos = listOf(photoUrl)
+                        ))))
+
+                        updateSeen(person, member, group)
+                        notifyMessage(me, member, group, message)
+
+                        HttpStatusCode.NoContent
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun notifyMessage(me: Person, member: Member, group: Group, message: Message) {
+    val pushData = PushData(
+        PushAction.Message, MessagePushData(
+            Group().apply { id = group.id },
+            Person(name = me.name).apply { id = me.id },
+            Message(text = message.text?.ellipsize(), attachment = message.attachment)
+        )
+    )
+
+    db.memberDevices(group.id!!).filter {
+        it.member?.id != member.id
+    }.apply {
+        filter { it.member?.hide == true }.forEach {
+            it.member!!.hide = false
+            db.update(it.member!!)
+        }
+
+        forEach {
+            it.devices?.forEach { device ->
+                push.sendPush(device, pushData)
+            }
+        }
+    }
+}
+
+private fun updateSeen(me: Person, member: Member, group: Group) {
+    member.seen = Clock.System.now()
+    db.update(member)
+
+    me.seen = Clock.System.now()
+    db.update(me)
+
+    group.seen = Clock.System.now()
+    db.update(group)
 }
 
 fun String.ellipsize(maxLength: Int = 128) = if (length <= maxLength) this else this.take(maxLength - 1) + "…"
