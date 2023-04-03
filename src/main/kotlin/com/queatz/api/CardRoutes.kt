@@ -137,14 +137,6 @@ fun Route.cardRoutes() {
                 } else {
                     val update = call.receive<Card>()
 
-                    fun <T> check(prop: KMutableProperty1<Card, T>, doOnSet: ((T) -> Unit)? = null) {
-                        val value = prop.get(update)
-                        if (value != null) {
-                            prop.set(card, value)
-                            doOnSet?.invoke(value)
-                        }
-                    }
-
                     if (update.parent != null) {
                         val parent = db.document(Card::class, update.parent!!)
                             ?: return@respond HttpStatusCode.NotFound.description("Parent card not found")
@@ -156,6 +148,46 @@ fun Route.cardRoutes() {
 
                     if (update.parent != null && update.equipped == true) {
                         return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
+                    }
+
+                    val parentCard = card.parent?.let { parent -> db.document(Card::class, parent) }
+
+                    // Change owner
+                    if (update.person != null && update.person != card.person) {
+                        if (parentCard != null) {
+                            // Remove the card from a parent if it's not accessible to the new owner
+                            if (parentCard.person != update.person && parentCard.collaborators?.contains(update.person!!) != true) {
+                                card.parent = null
+                                card.offline = true
+                            }
+                        } else {
+                        }
+
+                        val cardWasActive = card.active == true
+
+                        // Deactivate the card
+                        card.active = false
+
+                        // Always unequip the card
+                        card.equipped = null
+
+                        // Card is always removed because it is deactivated
+                        if (cardWasActive && parentCard != null) {
+                            notifyCardRemovedFromCard(person, parentCard.people(), parentCard, card)
+                        }
+
+                        val collaborators = card.collaborators ?: emptyList()
+
+                        // Add current owner as collaborator if they have inner cards
+                        if (person.id !in collaborators && db.allCardsOfCard(card.id!!).any { it.person == person.id }) {
+                            card.collaborators = collaborators + person.id!!
+                        }
+
+                        // Change the owner
+                        card.person = update.person
+
+                        // Finish to prevent anything else from changing
+                        return@respond db.update(card)
                     }
 
                     // Remove any cards of added collaborators
@@ -229,7 +261,13 @@ fun Route.cardRoutes() {
                         }
                     }
 
-                    val previousParent = card.parent
+                    fun <T> check(prop: KMutableProperty1<Card, T>, doOnSet: ((T) -> Unit)? = null) {
+                        val value = prop.get(update)
+                        if (value != null) {
+                            prop.set(card, value)
+                            doOnSet?.invoke(value)
+                        }
+                    }
 
                     check(Card::active)
                     check(Card::geo) {
@@ -254,6 +292,8 @@ fun Route.cardRoutes() {
                         card.parent = update.parent
                         card.offline = update.offline
                     }
+
+                    val previousParent = card.parent
 
                     if (card.photo == null && card.active == true) {
                         card.active = false
