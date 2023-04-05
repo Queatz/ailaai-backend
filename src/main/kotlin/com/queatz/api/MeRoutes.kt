@@ -99,7 +99,11 @@ fun Route.meRoutes() {
                 val person = me
 
                 if (!update.name.isNullOrBlank()) {
-                    person.name = update.name
+                    person.name = update.name?.trim()
+                }
+
+                if (!update.language.isNullOrBlank()) {
+                    person.language = update.language?.trim()
                 }
 
                 db.update(person)

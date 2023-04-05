@@ -6,7 +6,9 @@ import com.arangodb.model.GeoIndexOptions
 import com.arangodb.model.PersistentIndexOptions
 
 fun collections() = listOf(
-    Person::class.db {},
+    Person::class.db {
+        ensurePersistentIndex(listOf(Person::name.name), PersistentIndexOptions())
+    },
     Transfer::class.db {
         ensurePersistentIndex(listOf(Transfer::person.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Transfer::code.name), PersistentIndexOptions())

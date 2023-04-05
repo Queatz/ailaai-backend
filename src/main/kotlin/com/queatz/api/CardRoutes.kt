@@ -55,10 +55,13 @@ fun Route.cardRoutes() {
                     return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
                 }
 
-                db.updateEquippedCards(me.id!!, geo)
+                val person = me
+                person.geo = geo
+                db.update(person)
+                db.updateEquippedCards(person.id!!, geo)
 
                 db.explore(
-                    person = me.id!!,
+                    person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
                     nearbyMaxDistance = 1000,

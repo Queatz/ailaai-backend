@@ -24,6 +24,26 @@ fun Db.invite(code: String) = one(
 )
 
 /**
+ * Find people matching a name.
+ */
+fun Db.peopleWithName(name: String, geo: List<Double>? = null) = list(
+    Person::class,
+    """
+        for x in @@collection
+            filter lower(x.${f(Person::name)}) == @name
+            let d = x.${f(Person::geo)} == null || @geo == null ? null : distance(x.${f(Person::geo)}[0], x.${f(Person::geo)}[1], @geo[0], @geo[1])
+            sort d
+            sort d == null
+            limit 20
+            return x
+    """.trimIndent(),
+    mapOf(
+        "name" to name.lowercase(),
+        "geo" to geo
+    )
+)
+
+/**
  * @person The current user
  */
 fun Db.cardsOfPerson(person: String) = list(
