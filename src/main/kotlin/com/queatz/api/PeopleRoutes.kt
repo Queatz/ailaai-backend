@@ -1,5 +1,6 @@
 package com.queatz.api
 
+import com.queatz.db.Person
 import com.queatz.db.peopleWithName
 import com.queatz.plugins.db
 import com.queatz.plugins.me
@@ -15,10 +16,15 @@ fun Route.peopleRoutes() {
             respond {
                 val search = call.parameters["search"]?.takeIf { it.isNotBlank() }
                 db.peopleWithName(
+                    me.id!!,
                     search ?: return@respond HttpStatusCode.BadRequest.description("Missing 'search' parameter"),
                     me.geo
-                )
+                ).forApi()
             }
         }
     }
+}
+
+private fun List<Person>.forApi() = onEach {
+    it.geo = null
 }

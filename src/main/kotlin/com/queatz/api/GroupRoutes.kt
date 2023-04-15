@@ -27,7 +27,7 @@ fun Route.groupRoutes() {
                 me.seen = Clock.System.now()
                 db.update(me)
 
-                db.groups(me.id!!)
+                db.groups(me.id!!).forApi()
             }
         }
 
@@ -55,7 +55,7 @@ fun Route.groupRoutes() {
                         member.seen = Clock.System.now()
                         db.update(member)
                     }
-                } ?: HttpStatusCode.NotFound
+                }?.forApi() ?: HttpStatusCode.NotFound
             }
         }
 
@@ -91,14 +91,14 @@ fun Route.groupRoutes() {
             }
         }
 
-        get("/groups/{id}/members") {
-            respond {
-                // todo verify I'm in this group before returning members
-                db.group(me.id!!, call.parameters["id"]!!)?.let {
-                    db.messages(it.group!!.id!!)
-                } ?: HttpStatusCode.NotFound
-            }
-        }
+//        get("/groups/{id}/members") {
+//            respond {
+//                // todo verify I'm in this group before returning members
+//                db.group(me.id!!, call.parameters["id"]!!)?.let {
+//                    db.members(it.group!!.id!!)
+//                } ?: HttpStatusCode.NotFound
+//            }
+//        }
 
         post("/groups/{id}/messages") {
             respond {
@@ -171,6 +171,17 @@ fun Route.groupRoutes() {
                 }
             }
         }
+    }
+}
+
+
+private fun List<GroupExtended>.forApi() = onEach {
+    it.forApi()
+}
+
+private fun GroupExtended.forApi() = also {
+    it.members?.onEach {
+        it.person?.geo = null
     }
 }
 

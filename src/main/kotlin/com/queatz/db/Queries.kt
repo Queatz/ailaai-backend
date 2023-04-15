@@ -24,13 +24,24 @@ fun Db.invite(code: String) = one(
 )
 
 /**
- * Find people matching a name.
+ * Find people matching @name that are not connected with @person sorted by distance from @geo.
  */
-fun Db.peopleWithName(name: String, geo: List<Double>? = null) = list(
+fun Db.peopleWithName(person: String, name: String, geo: List<Double>? = null) = list(
     Person::class,
     """
         for x in @@collection
             filter lower(x.${f(Person::name)}) == @name
+                and first(
+                    for group, edge in outbound @person graph `${Member::class.graph()}`
+                        filter edge.${f(Member::hide)} != true 
+                            and edge.${f(Member::gone)} != true
+                        for otherPerson, otherEdge in inbound group graph `${Member::class.graph()}`
+                            filter otherEdge._to == group._id
+                                and otherPerson._id == x._id
+                                and otherEdge.${f(Member::gone)} != true
+                            limit 1
+                            return true
+                ) != true
             let d = x.${f(Person::geo)} == null || @geo == null ? null : distance(x.${f(Person::geo)}[0], x.${f(Person::geo)}[1], @geo[0], @geo[1])
             sort d
             sort d == null
@@ -38,6 +49,7 @@ fun Db.peopleWithName(name: String, geo: List<Double>? = null) = list(
             return x
     """.trimIndent(),
     mapOf(
+        "person" to person.asId(Person::class),
         "name" to name.lowercase(),
         "geo" to geo
     )

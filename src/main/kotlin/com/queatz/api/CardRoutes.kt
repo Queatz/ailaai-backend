@@ -93,6 +93,7 @@ fun Route.cardRoutes() {
                             name = card.name,
                             parent = parentCard?.id,
                             equipped = card.equipped,
+                            offline = card.offline,
                             active = false
                         )
                     )
