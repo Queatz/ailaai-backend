@@ -4,15 +4,12 @@ import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
+import com.queatz.receivePhoto
 import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
 import kotlin.random.Random
 
 private data class LeaveCollaborationBody(val card: String)
@@ -45,6 +42,42 @@ fun Route.meRoutes() {
         get("/me/cards") {
             respond {
                 db.cardsOfPerson(me.id!!)
+            }
+        }
+
+        get("/me/profile") {
+            respond {
+                db.profile(me.id!!) ?: HttpStatusCode.NotFound
+            }
+        }
+
+        post("/me/profile") {
+            respond {
+                val update = call.receive<Profile>()
+                val person = me
+                val profile = db.profile(me.id!!)
+
+                if (update.about != null) {
+                    profile.about = update.about?.trim()
+                }
+
+                if (update.photo != null) {
+                    profile.photo = update.photo?.trim()
+                }
+
+                db.update(profile)
+            }
+        }
+
+        post("/me/profile/photo") {
+            respond {
+                val person = me
+
+                call.receivePhoto("profile-${person.id!!}") {
+                    val profile = db.profile(me.id!!)
+                    profile.photo = it
+                    db.update(profile)
+                }
             }
         }
 
@@ -113,31 +146,9 @@ fun Route.meRoutes() {
         post("/me/photo") {
             respond {
                 val person = me
-
-                val parts = call.receiveMultipart().readAllParts()
-
-                val photo = parts.find { it.name == "photo" } as? PartData.FileItem
-
-                if (photo == null) {
-                    HttpStatusCode.BadRequest.description("Missing 'photo'")
-                } else {
-                    if (!File("./static/photos").isDirectory) {
-                        File("./static/photos").mkdirs()
-                    }
-
-                    val fileName = "person-${person.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
-                    val file = File("./static/photos/${fileName}")
-
-                    withContext(Dispatchers.IO) {
-                        file.outputStream().write(photo.streamProvider().readBytes())
-                    }
-
-                    val photoUrl = "/static/photos/${fileName}"
-                    person.photo = photoUrl
-
+                call.receivePhoto("person-${person.id}") {
+                    person.photo = it
                     db.update(person)
-
-                    HttpStatusCode.NoContent
                 }
             }
         }

@@ -21,6 +21,12 @@ class Settings(
     var language: String? = null
 ) : Model()
 
+class Profile(
+    var person: String? = null,
+    var photo: String? = null,
+    var about: String? = null
+) : Model()
+
 class Invite(
     var person: String? = null,
     var code: String? = null

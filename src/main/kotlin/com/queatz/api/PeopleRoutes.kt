@@ -1,7 +1,6 @@
 package com.queatz.api
 
-import com.queatz.db.Person
-import com.queatz.db.peopleWithName
+import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
@@ -9,6 +8,11 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+
+data class PersonProfile(
+    val person: Person,
+    val profile: Profile
+)
 
 fun Route.peopleRoutes() {
     authenticate {
@@ -22,9 +26,34 @@ fun Route.peopleRoutes() {
                 ).forApi()
             }
         }
+
+        get("/people/{id}/profile") {
+            respond {
+                val person = db.document(Person::class, call.parameters["id"]!!)
+                    ?: return@respond HttpStatusCode.NotFound
+
+                PersonProfile(
+                    person,
+                    db.profile(person.id!!)
+                )
+            }
+        }
+
+        get("/people/{id}/profile/cards") {
+            respond {
+                val person = db.document(Person::class, call.parameters["id"]!!)
+                    ?: return@respond HttpStatusCode.NotFound
+
+                db.equippedCardsOfPerson(person.id!!)
+            }
+        }
     }
 }
 
 private fun List<Person>.forApi() = onEach {
-    it.geo = null
+    it.forApi()
+}
+
+private fun Person.forApi() {
+    geo = null
 }

@@ -17,7 +17,12 @@ fun collections() = listOf(
         ensurePersistentIndex(listOf(Device::person.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Device::type.name, Device::token.name), PersistentIndexOptions())
     },
-    Settings::class.db {},
+    Settings::class.db {
+        ensurePersistentIndex(listOf(Settings::person.name), PersistentIndexOptions())
+    },
+    Profile::class.db {
+        ensurePersistentIndex(listOf(Profile::person.name), PersistentIndexOptions())
+    },
     Invite::class.db {
         ensurePersistentIndex(listOf(Invite::code.name), PersistentIndexOptions())
     },
@@ -26,6 +31,8 @@ fun collections() = listOf(
     },
     Card::class.db {
         ensurePersistentIndex(listOf(Card::person.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::parent.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::active.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::name.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::location.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::collaborators.name), PersistentIndexOptions())

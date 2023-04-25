@@ -5,17 +5,13 @@ import com.queatz.PushAction
 import com.queatz.PushData
 import com.queatz.db.*
 import com.queatz.plugins.*
+import com.queatz.receivePhotos
 import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import java.io.File
-import kotlin.random.Random
 
 data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
@@ -128,31 +124,8 @@ fun Route.groupRoutes() {
                 if (member == null) {
                     HttpStatusCode.NotFound
                 } else {
-                    val parts = call.receiveMultipart().readAllParts()
-
-                    val match = "photo\\[(\\d+)]".toRegex()
-                    val photos = parts
-                        .filter { match.matches(it.name ?: "") }
-                        .mapNotNull { it as? PartData.FileItem  }
-
-                    if (photos.isEmpty()) {
-                        HttpStatusCode.BadRequest.description("Missing 'photo[0]'")
-                    } else {
-                        if (!File("./static/photos").isDirectory) {
-                            File("./static/photos").mkdirs()
-                        }
-
-                        val group = db.document(Group::class, member.to!!)!!
-
-                        val photosUrls = withContext(Dispatchers.IO) {
-                            photos.map { photo ->
-                                val fileName = "group-${group.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
-                                val file = File("./static/photos/${fileName}")
-                                file.outputStream().write(photo.streamProvider().readBytes())
-                                "/static/photos/${fileName}"
-                            }
-                        }
-
+                    val group = db.document(Group::class, member.to!!)!!
+                    call.receivePhotos("group-${group.id}") { photosUrls ->
                         val message = db.insert(
                             Message(
                                 member.to?.asKey(), member.id, null, json.toJson(
@@ -165,8 +138,6 @@ fun Route.groupRoutes() {
 
                         updateSeen(person, member, group)
                         notifyMessage(me, member, group, message)
-
-                        HttpStatusCode.NoContent
                     }
                 }
             }

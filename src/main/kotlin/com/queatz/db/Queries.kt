@@ -77,6 +77,29 @@ fun Db.cardsOfPerson(person: String) = list(
 )
 
 /**
+ * @person The person to fetch equipped cards for
+ */
+fun Db.equippedCardsOfPerson(person: String) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::person)} == @person
+                and x.${f(Card::equipped)} == true
+                and x.${f(Card::active)} == true
+            sort x.${f(Card::createdAt)} desc
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
+                }
+            )
+    """.trimIndent(),
+    mapOf(
+        "person" to person
+    )
+)
+
+/**
  * @person The current user
  */
 fun Db.collaborationsOfPerson(person: String) = list(
@@ -310,6 +333,23 @@ fun Db.people(people: List<String>) = list(
 )
 
 /**
+ * @person the person to fetch a profile for
+ */
+fun Db.profile(person: String) = one(
+    Profile::class,
+    """
+    upsert { ${f(Profile::person)}: @person }
+        insert { ${f(Profile::person)}: @person, ${f(Profile::createdAt)}: DATE_ISO8601(DATE_NOW()) }
+        update { }
+        in @@collection
+        return NEW || OLD
+    """.trimIndent(),
+    mapOf(
+        "person" to person
+    )
+)!!
+
+/**
  * @person The current user
  */
 fun Db.groups(person: String) = query(
@@ -516,7 +556,7 @@ fun Db.updateDevice(person: String, type: DeviceType, token: String) = one(
         """
             upsert { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
                 insert { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Device::person)}: @person, ${f(Person::createdAt)}: DATE_ISO8601(DATE_NOW()) }
-                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Device::person)}: @person}
+                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Device::person)}: @person }
                 in @@collection
                 return NEW || OLD
         """.trimIndent(),
@@ -546,7 +586,7 @@ fun Db.device(type: DeviceType, token: String) = one(
         """
             upsert { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
                 insert { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Person::createdAt)}: DATE_ISO8601(DATE_NOW()) }
-                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token}
+                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
                 in @@collection
                 return NEW || OLD
         """,

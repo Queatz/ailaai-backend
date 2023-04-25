@@ -4,15 +4,10 @@ import com.queatz.*
 import com.queatz.db.*
 import com.queatz.plugins.*
 import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
-import kotlin.random.Random
 import kotlin.reflect.KMutableProperty1
 
 fun Route.cardRoutes() {
@@ -64,7 +59,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = 1000,
+                    nearbyMaxDistance = 100_000,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 )
@@ -323,27 +318,8 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    val parts = call.receiveMultipart().readAllParts()
-
-                    val photo = parts.find { it.name == "photo" } as? PartData.FileItem
-
-                    if (photo == null) {
-                        HttpStatusCode.BadRequest.description("Missing 'photo'")
-                    } else {
-                        if (!File("./static/photos").isDirectory) {
-                            File("./static/photos").mkdirs()
-                        }
-
-                        val fileName = "card-${card.id}-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
-                        val file = File("./static/photos/${fileName}")
-
-                        withContext(Dispatchers.IO) {
-                            file.outputStream().write(photo.streamProvider().readBytes())
-                        }
-
-                        val photoUrl = "/static/photos/${fileName}"
-                        card.photo = photoUrl
-
+                    call.receivePhoto("card-${card.id}") {
+                        card.photo = it
                         db.update(card)
 
                         if (card.active == true) {
@@ -352,8 +328,6 @@ fun Route.cardRoutes() {
                             }
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
                         }
-
-                        HttpStatusCode.NoContent
                     }
                 }
             }
