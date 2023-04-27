@@ -42,6 +42,31 @@ fun Route.cardRoutes() {
     }
 
     authenticate {
+        get("/categories") {
+            respond {
+                val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
+
+                if (geo.size != 2) {
+                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
+                }
+
+                val person = me
+
+                (db.explore(
+                    person = person.id!!,
+                    geo = geo,
+                    search = call.parameters["search"]?.takeIf { it.isNotBlank() },
+                    nearbyMaxDistance = 100_000,
+                    offset = call.parameters["offset"]?.toInt() ?: 0,
+                    limit = call.parameters["limit"]?.toInt() ?: 20
+                ) + db.cardsOfPerson(me.id!!)).flatMap {
+                    it.categories ?: emptyList()
+                }
+                    .distinct()
+                    .sorted()
+            }
+        }
+
         get("/cards") {
             respond {
                 val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
@@ -275,6 +300,7 @@ fun Route.cardRoutes() {
                     }
                     check(Card::location)
                     check(Card::collaborators)
+                    check(Card::categories)
                     check(Card::offline) {
                         card.parent = update.parent
                         card.equipped = update.equipped

@@ -232,8 +232,7 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
                                 limit 1
                                 return true
                 ) == true))
-            sort d
-            sort d == null
+            sort d == null, d
             limit @offset, @limit
             return merge(
                 x,
