@@ -1,5 +1,7 @@
 package com.queatz.db
 
+import kotlinx.datetime.Instant
+
 val Db.totalPeople
     get() = query(
         Int::class,
@@ -26,7 +28,7 @@ fun Db.invite(code: String) = one(
 /**
  * Find people matching @name that are not connected with @person sorted by distance from @geo.
  */
-fun Db.peopleWithName(person: String, name: String, geo: List<Double>? = null) = list(
+fun Db.peopleWithName(person: String, name: String, geo: List<Double>? = null, limit: Int = 20) = list(
     Person::class,
     """
         for x in @@collection
@@ -45,13 +47,14 @@ fun Db.peopleWithName(person: String, name: String, geo: List<Double>? = null) =
             let d = x.${f(Person::geo)} == null || @geo == null ? null : distance(x.${f(Person::geo)}[0], x.${f(Person::geo)}[1], @geo[0], @geo[1])
             sort d
             sort d == null
-            limit 20
+            limit @limit
             return x
     """.trimIndent(),
     mapOf(
         "person" to person.asId(Person::class),
         "name" to name.lowercase(),
-        "geo" to geo
+        "geo" to geo,
+        "limit" to limit
     )
 )
 
@@ -67,7 +70,7 @@ fun Db.cardsOfPerson(person: String) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
@@ -90,7 +93,7 @@ fun Db.equippedCardsOfPerson(person: String) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
@@ -112,7 +115,7 @@ fun Db.collaborationsOfPerson(person: String) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
@@ -217,32 +220,39 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
     Card::class,
     """
         for x in @@collection
-            let d = x.${f(Card::geo)} == null ? null : distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             filter x.${f(Card::active)} == true
                 and (x.${f(Card::parent)} == null or @search != null) // When searching, include cards inside other cards
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
                 and x.${f(Card::offline)} != true
-                and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
-                and ((d != null and d <= @nearbyMaxDistance) or (x.${f(Card::equipped)} == true and first(
-                    for group in `${Group::class.collection()}`
-                        for person, member in inbound group graph `${Member::class.graph()}`
-                                filter member.${f(Member::gone)} != true and person._key == @person
-                            for friend, member2 in inbound group graph `${Member::class.graph()}`
-                                    filter member2.${f(Member::gone)} != true and friend._key == x.${f(Card::person)}
+                and (
+                    @search == null 
+                        or contains(lower(x.${f(Card::name)}), @search)
+                        or contains(lower(x.${f(Card::location)}), @search)
+                        or contains(lower(x.${f(Card::conversation)}), @search)
+                )
+            let d = x.${f(Card::geo)} == null ? null : distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
+            filter (
+                    (d != null and d <= @nearbyMaxDistance) or (x.${f(Card::equipped)} == true and first(
+                        for group in outbound @person graph `${Member::class.graph()}`
+                            for friend, member in inbound group graph `${Member::class.graph()}`
+                                filter member.${f(Member::gone)} != true
+                                    and friend._key == x.${f(Card::person)}
                                 limit 1
                                 return true
-                ) == true))
+                    ) == true
+                )
+            )
             sort d == null, d
             limit @offset, @limit
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
     mapOf(
-        "person" to person,
+        "person" to person.asId(Person::class),
         "geo" to geo,
         "search" to search?.trim()?.lowercase(),
         "nearbyMaxDistance" to nearbyMaxDistance,
@@ -265,7 +275,7 @@ fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: 
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter card.${f(Card::active)} == true && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
@@ -291,7 +301,7 @@ fun Db.cardsOfCard(card: String, person: String?) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return card)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
@@ -534,18 +544,19 @@ fun Db.group(people: List<String>) = one(
     )
 )
 
-fun Db.messages(group: String, offset: Int = 0, limit: Int = 20) = list(
+fun Db.messages(group: String, before: Instant? = null, limit: Int = 20) = list(
     Message::class,
     """
         for x in @@collection
             filter x.${f(Message::group)} == @group
+            and (@before == null or x.${f(Message::createdAt)} <= @before)
             sort x.${f(Message::createdAt)} desc
-            limit @offset, @limit
+            limit @limit
             return x
     """.trimIndent(),
     mapOf(
         "group" to group,
-        "offset" to offset,
+        "before" to before,
         "limit" to limit
     )
 )

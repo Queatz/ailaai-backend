@@ -12,6 +12,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import kotlinx.datetime.toInstant
 
 data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
@@ -82,7 +83,11 @@ fun Route.groupRoutes() {
         get("/groups/{id}/messages") {
             respond {
                 db.group(me.id!!, call.parameters["id"]!!)?.let {
-                    db.messages(it.group!!.id!!)
+                    db.messages(
+                        it.group!!.id!!,
+                        call.parameters["before"]?.toInstant(),
+                        call.parameters["limit"]?.toInt() ?: 20
+                    )
                 } ?: HttpStatusCode.NotFound
             }
         }
