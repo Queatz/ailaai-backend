@@ -25,6 +25,37 @@ fun Db.invite(code: String) = one(
     )
 )
 
+fun Db.friendsCount(person: String) = query(
+    Int::class,
+    """
+            return count(
+                for group in outbound @person graph `${Member::class.graph()}`
+                    for friend, member in inbound group graph `${Member::class.graph()}`
+                        filter member.${f(Member::gone)} != true
+                            and member._from != @person
+                        return distinct friend
+            )
+        """,
+    mapOf(
+        "person" to person.asId(Person::class)
+    )
+).first()!!
+
+fun Db.cardsCount(person: String) = query(
+    Int::class,
+    """
+            return count(
+                for card in `${Card::class.collection()}`
+                    filter card.${f(Card::person)} == @person
+                        and card.${f(Card::active)} == true
+                    return distinct card
+            )
+        """,
+    mapOf(
+        "person" to person
+    )
+).first()!!
+
 /**
  * Find people matching @name that are not connected with @person sorted by distance from @geo.
  */

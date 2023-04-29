@@ -9,9 +9,15 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 
+data class ProfileStats(
+    val friendsCount: Int,
+    val cardCount: Int
+)
+
 data class PersonProfile(
     val person: Person,
-    val profile: Profile
+    val profile: Profile,
+    val stats: ProfileStats
 )
 
 fun Route.peopleRoutes() {
@@ -34,7 +40,11 @@ fun Route.peopleRoutes() {
 
                 PersonProfile(
                     person,
-                    db.profile(person.id!!)
+                    db.profile(person.id!!),
+                    ProfileStats(
+                        friendsCount = db.friendsCount(person.id!!),
+                        cardCount = db.cardsCount(person.id!!),
+                    )
                 )
             }
         }
