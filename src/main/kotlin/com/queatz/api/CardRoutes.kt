@@ -56,7 +56,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = 100_000,
+                    nearbyMaxDistance = 500_000,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 ) + db.cardsOfPerson(me.id!!)).flatMap {
@@ -84,7 +84,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = 100_000,
+                    nearbyMaxDistance = 500_000,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 )
@@ -111,6 +111,7 @@ fun Route.cardRoutes() {
                         Card(
                             person.id!!,
                             name = card.name,
+                            conversation = card.conversation,
                             parent = parentCard?.id,
                             equipped = card.equipped,
                             offline = card.offline,

@@ -54,7 +54,7 @@ fun Route.peopleRoutes() {
                 val person = db.document(Person::class, call.parameters["id"]!!)
                     ?: return@respond HttpStatusCode.NotFound
 
-                db.equippedCardsOfPerson(person.id!!)
+                db.equippedCardsOfPerson(person.id!!, me.id!!)
             }
         }
     }

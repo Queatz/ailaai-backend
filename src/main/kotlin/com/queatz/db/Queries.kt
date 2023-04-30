@@ -113,7 +113,7 @@ fun Db.cardsOfPerson(person: String) = list(
 /**
  * @person The person to fetch equipped cards for
  */
-fun Db.equippedCardsOfPerson(person: String) = list(
+fun Db.equippedCardsOfPerson(person: String, me: String) = list(
     Card::class,
     """
         for x in @@collection
@@ -124,12 +124,13 @@ fun Db.equippedCardsOfPerson(person: String) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @me or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
     mapOf(
-        "person" to person
+        "person" to person,
+        "me" to me,
     )
 )
 
@@ -255,6 +256,7 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
                 and (x.${f(Card::parent)} == null or @search != null) // When searching, include cards inside other cards
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
                 and x.${f(Card::offline)} != true
+                and (x.${f(Card::person)} != @personKey or x.${f(Card::equipped)} != true)
                 and (
                     @search == null 
                         or contains(lower(x.${f(Card::name)}), @search)
@@ -283,6 +285,7 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
             )
     """.trimIndent(),
     mapOf(
+        "personKey" to person.asKey(),
         "person" to person.asId(Person::class),
         "geo" to geo,
         "search" to search?.trim()?.lowercase(),
