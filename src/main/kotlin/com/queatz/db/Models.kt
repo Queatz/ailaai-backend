@@ -24,6 +24,7 @@ class Settings(
 class Profile(
     var person: String? = null,
     var photo: String? = null,
+    var video: String? = null,
     var about: String? = null
 ) : Model()
 
@@ -47,6 +48,7 @@ class Card(
     var parent: String? = null,
     var name: String? = null,
     var photo: String? = null,
+    var video: String? = null,
     var location: String? = null,
     var collaborators: List<String>? = null,
     var categories: List<String>? = null,

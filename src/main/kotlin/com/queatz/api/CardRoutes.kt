@@ -262,6 +262,9 @@ fun Route.cardRoutes() {
                             if (update.photo != null && update.photo != card.photo) {
                                 notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Photo)
                             }
+                            if (update.video != null && update.video != card.video) {
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Video)
+                            }
                             if (update.conversation != null && update.conversation != card.conversation) {
                                 notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Conversation)
                             }
@@ -277,6 +280,9 @@ fun Route.cardRoutes() {
                         }
                         if (update.photo != null && update.photo != card.photo) {
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
+                        }
+                        if (update.video != null && update.video != card.video) {
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Video)
                         }
                         if (update.conversation != null && update.conversation != card.conversation) {
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Conversation)
@@ -294,6 +300,8 @@ fun Route.cardRoutes() {
                         }
                     }
 
+                    val previousParent = card.parent
+
                     check(Card::active)
                     check(Card::geo) {
                         card.parent = update.parent
@@ -309,7 +317,12 @@ fun Route.cardRoutes() {
                     }
                     check(Card::name)
                     check(Card::conversation)
-                    check(Card::photo)
+                    check(Card::photo) {
+                        card.video = update.video
+                    }
+                    check(Card::video) {
+                        card.photo = update.photo
+                    }
                     check(Card::parent) {
                         card.equipped = update.equipped
                         card.offline = update.offline
@@ -318,10 +331,7 @@ fun Route.cardRoutes() {
                         card.parent = update.parent
                         card.offline = update.offline
                     }
-
-                    val previousParent = card.parent
-
-                    if (card.photo == null && card.active == true) {
+                    if (card.photo == null && card.video == null && card.active == true) {
                         card.active = false
                     }
 
@@ -354,6 +364,31 @@ fun Route.cardRoutes() {
                                 notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Photo)
                             }
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
+                        }
+                    }
+                }
+            }
+        }
+
+        post("/cards/{id}/video") {
+            respond {
+                val card = db.document(Card::class, call.parameters["id"]!!)
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.person!!.asKey() != person.id) {
+                    HttpStatusCode.Forbidden
+                } else {
+                    call.receivePhoto("card-${card.id}") {
+                        card.video = it
+                        db.update(card)
+
+                        if (card.active == true) {
+                            card.parent?.let { db.document(Card::class, it) }?.let { parentCard ->
+                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Video)
+                            }
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Video)
                         }
                     }
                 }

@@ -54,7 +54,6 @@ fun Route.meRoutes() {
         post("/me/profile") {
             respond {
                 val update = call.receive<Profile>()
-                val person = me
                 val profile = db.profile(me.id!!)
 
                 if (update.about != null) {
@@ -62,7 +61,13 @@ fun Route.meRoutes() {
                 }
 
                 if (update.photo != null) {
-                    profile.photo = update.photo?.trim()
+                    profile.photo = update.photo
+                    profile.video = null
+                }
+
+                if (update.video != null) {
+                    profile.video = update.video
+                    profile.photo = null
                 }
 
                 db.update(profile)
@@ -76,6 +81,20 @@ fun Route.meRoutes() {
                 call.receivePhoto("profile-${person.id!!}") {
                     val profile = db.profile(me.id!!)
                     profile.photo = it
+                    profile.video = null
+                    db.update(profile)
+                }
+            }
+        }
+
+        post("/me/profile/video") {
+            respond {
+                val person = me
+
+                call.receivePhoto("profile-${person.id!!}") {
+                    val profile = db.profile(me.id!!)
+                    profile.video = it
+                    profile.photo = null
                     db.update(profile)
                 }
             }
