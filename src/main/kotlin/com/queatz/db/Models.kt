@@ -43,6 +43,10 @@ class Transfer(
     var code: String? = null
 ) : Model()
 
+class Crash(
+    var details: String? = null
+) : Model()
+
 class Card(
     var person: String? = null,
     var parent: String? = null,

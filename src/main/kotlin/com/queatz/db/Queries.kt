@@ -2,6 +2,16 @@ package com.queatz.db
 
 import kotlinx.datetime.Instant
 
+fun Db.recentCrashes() = list(
+    Crash::class,
+    """
+        for x in @@collection
+            sort x.${f(Card::createdAt)} desc
+            limit 50
+            return x
+    """.trimIndent()
+)
+
 val Db.totalPeople
     get() = query(
         Int::class,

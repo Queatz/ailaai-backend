@@ -49,5 +49,6 @@ fun collections() = listOf(
         ensurePersistentIndex(listOf(Member::gone.name), PersistentIndexOptions())
 
     },
-    Message::class.db {}
+    Message::class.db {},
+    Crash::class.db {}
 )

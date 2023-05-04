@@ -30,6 +30,7 @@ fun Application.configureRouting() {
         messageRoutes()
         wildRoutes()
         hmsRoutes()
+        crashRoutes()
 
         static("/static") {
             files("static")
