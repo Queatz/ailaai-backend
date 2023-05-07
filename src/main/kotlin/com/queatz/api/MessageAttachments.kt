@@ -12,6 +12,18 @@ class PhotosAttachment(
     override val type = "photos"
 }
 
+class AudioAttachment(
+    var audio: String? = null
+) : MessageAttachment() {
+    override val type = "audio"
+}
+
+class VideoAttachment(
+    var video: String? = null
+) : MessageAttachment() {
+    override val type = "video"
+}
+
 abstract class MessageAttachment  {
     abstract val type: String
 }

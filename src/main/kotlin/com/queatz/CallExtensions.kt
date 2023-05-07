@@ -9,58 +9,59 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.random.Random
 
-suspend fun ApplicationCall.receivePhotos(prefix: String, onFileNames: suspend (fileNames: List<String>) -> Unit) {
+suspend fun ApplicationCall.receiveFiles(param: String, prefix: String, onFileNames: suspend (fileNames: List<String>) -> Unit) {
     val parts = receiveMultipart().readAllParts()
 
-    val match = "photo\\[(\\d+)]".toRegex()
-    val photos = parts
+    val match = "$param\\[(\\d+)]".toRegex()
+    val fileItems = parts
         .filter { match.matches(it.name ?: "") }
         .mapNotNull { it as? PartData.FileItem  }
 
-    if (photos.isEmpty()) {
-        HttpStatusCode.BadRequest.description("Missing 'photo[0]'")
+    if (fileItems.isEmpty()) {
+        HttpStatusCode.BadRequest.description("Missing '$param[0]'")
     } else {
-        if (!File("./static/photos").isDirectory) {
-            File("./static/photos").mkdirs()
+        val folder = "./static/$param"
+        if (!File(folder).isDirectory) {
+            File(folder).mkdirs()
         }
 
 
-        val photosUrls = withContext(Dispatchers.IO) {
-            photos.map { photo ->
-                val fileName = "$prefix-${Random.nextInt(10000000, 99999999)}-${photo.originalFileName}"
-                val file = File("./static/photos/${fileName}")
-                file.outputStream().write(photo.streamProvider().readBytes())
-                "/static/photos/${fileName}"
+        val urls = withContext(Dispatchers.IO) {
+            fileItems.map { fileItem ->
+                val fileName = "$prefix-${Random.nextInt(10000000, 99999999)}-${fileItem.originalFileName}"
+                val file = File("$folder/$fileName")
+                file.outputStream().write(fileItem.streamProvider().readBytes())
+                "${folder.drop(1)}/$fileName"
             }
         }
 
-        onFileNames(photosUrls)
+        onFileNames(urls)
 
         HttpStatusCode.NoContent
     }
 }
 
-suspend fun ApplicationCall.receivePhoto(prefix: String, onFileName: suspend (fileName: String) -> Unit) {
+suspend fun ApplicationCall.receiveFile(param: String, prefix: String, onFileName: suspend (fileName: String) -> Unit) {
     val parts = receiveMultipart().readAllParts()
 
-    val photo = parts.find { it.name == "photo" } as? PartData.FileItem
+    val fileItem = parts.find { it.name == param } as? PartData.FileItem
 
-    if (photo == null) {
-        HttpStatusCode.BadRequest.description("Missing 'photo'")
+    if (fileItem == null) {
+        HttpStatusCode.BadRequest.description("Missing '$param'")
     } else {
-        if (!File("./static/photos").isDirectory) {
-            File("./static/photos").mkdirs()
+        val folder = "./static/$param"
+        if (!File(folder).isDirectory) {
+            File(folder).mkdirs()
         }
 
-        val fileName = "$prefix-${Random.nextInt(100_000_000, 999_999_999)}-${photo.originalFileName}"
-        val file = File("./static/photos/${fileName}")
+        val fileName = "$prefix-${Random.nextInt(100_000_000, 999_999_999)}-${fileItem.originalFileName}"
+        val file = File("$folder/$fileName")
 
         withContext(Dispatchers.IO) {
-            file.outputStream().write(photo.streamProvider().readBytes())
+            file.outputStream().write(fileItem.streamProvider().readBytes())
         }
 
-        val photoUrl = "/static/photos/${fileName}"
-        onFileName(photoUrl)
+        onFileName("${folder.drop(1)}/$fileName")
 
         HttpStatusCode.NoContent
     }

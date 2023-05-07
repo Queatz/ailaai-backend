@@ -78,7 +78,7 @@ fun Route.cardRoutes() {
                 val person = me
                 person.geo = geo
                 db.update(person)
-                db.updateEquippedCards(person.id!!, geo)
+                db.updateEquippedCards(person.id!!, geo.scatterGeo())
 
                 db.explore(
                     person = person.id!!,
@@ -355,7 +355,7 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    call.receivePhoto("card-${card.id}") {
+                    call.receiveFile("photo", "card-${card.id}") {
                         card.photo = it
                         db.update(card)
 
@@ -380,7 +380,7 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    call.receivePhoto("card-${card.id}") {
+                    call.receiveFile("photo", "card-${card.id}") {
                         card.video = it
                         db.update(card)
 

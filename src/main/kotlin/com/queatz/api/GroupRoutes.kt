@@ -1,11 +1,8 @@
 package com.queatz.api
 
-import com.queatz.MessagePushData
-import com.queatz.PushAction
-import com.queatz.PushData
+import com.queatz.*
 import com.queatz.db.*
 import com.queatz.plugins.*
-import com.queatz.receivePhotos
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -130,12 +127,39 @@ fun Route.groupRoutes() {
                     HttpStatusCode.NotFound
                 } else {
                     val group = db.document(Group::class, member.to!!)!!
-                    call.receivePhotos("group-${group.id}") { photosUrls ->
+                    call.receiveFiles("photo", "group-${group.id}") { photosUrls ->
                         val message = db.insert(
                             Message(
                                 member.to?.asKey(), member.id, null, json.toJson(
                                     PhotosAttachment(
                                         photos = photosUrls
+                                    )
+                                )
+                            )
+                        )
+
+                        updateSeen(person, member, group)
+                        notifyMessage(me, member, group, message)
+                    }
+                }
+            }
+        }
+
+        post("/groups/{id}/audio") {
+            respond {
+                val person = me
+                val member = db.member(person.id!!, call.parameters["id"]!!)
+
+                if (member == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    val group = db.document(Group::class, member.to!!)!!
+                    call.receiveFile("audio", "group-${group.id}") { url ->
+                        val message = db.insert(
+                            Message(
+                                member.to?.asKey(), member.id, null, json.toJson(
+                                    AudioAttachment(
+                                        audio = url
                                     )
                                 )
                             )
@@ -163,7 +187,8 @@ private fun GroupExtended.forApi() = also {
 
 private fun notifyMessage(me: Person, member: Member, group: Group, message: Message) {
     val pushData = PushData(
-        PushAction.Message, MessagePushData(
+        PushAction.Message,
+        MessagePushData(
             Group().apply { id = group.id },
             Person(name = me.name).apply { id = me.id },
             Message(text = message.text?.ellipsize(), attachment = message.attachment)

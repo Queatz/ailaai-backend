@@ -4,7 +4,7 @@ import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
-import com.queatz.receivePhoto
+import com.queatz.receiveFile
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -78,7 +78,7 @@ fun Route.meRoutes() {
             respond {
                 val person = me
 
-                call.receivePhoto("profile-${person.id!!}") {
+                call.receiveFile("photo", "profile-${person.id!!}") {
                     val profile = db.profile(me.id!!)
                     profile.photo = it
                     profile.video = null
@@ -91,7 +91,7 @@ fun Route.meRoutes() {
             respond {
                 val person = me
 
-                call.receivePhoto("profile-${person.id!!}") {
+                call.receiveFile("photo", "profile-${person.id!!}") {
                     val profile = db.profile(me.id!!)
                     profile.video = it
                     profile.photo = null
@@ -165,7 +165,7 @@ fun Route.meRoutes() {
         post("/me/photo") {
             respond {
                 val person = me
-                call.receivePhoto("person-${person.id}") {
+                call.receiveFile("photo", "person-${person.id}") {
                     person.photo = it
                     db.update(person)
                 }

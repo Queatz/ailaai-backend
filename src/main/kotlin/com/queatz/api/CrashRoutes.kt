@@ -22,7 +22,7 @@ fun Route.crashRoutes() {
     }
     get("/crash") {
         respond {
-            db.recentCrashes()
+            db.recentCrashes(call.parameters["limit"]?.toInt() ?: 20)
         }
     }
 }

@@ -2,14 +2,17 @@ package com.queatz.db
 
 import kotlinx.datetime.Instant
 
-fun Db.recentCrashes() = list(
+fun Db.recentCrashes(limit: Int = 50) = list(
     Crash::class,
     """
         for x in @@collection
             sort x.${f(Card::createdAt)} desc
-            limit 50
+            limit @limit
             return x
-    """.trimIndent()
+    """.trimIndent(),
+    mapOf(
+        "limit" to limit
+    )
 )
 
 val Db.totalPeople
