@@ -31,6 +31,7 @@ fun Application.configureRouting() {
         wildRoutes()
         hmsRoutes()
         crashRoutes()
+        statsRoutes()
 
         static("/static") {
             files("static")

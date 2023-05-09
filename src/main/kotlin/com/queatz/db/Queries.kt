@@ -15,11 +15,65 @@ fun Db.recentCrashes(limit: Int = 50) = list(
     )
 )
 
+fun Db.activePeople(days: Int) = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Person::class.collection()}`
+                    filter x.${f(Person::seen)} != null
+                        and x.${f(Person::seen)} >= date_subtract(DATE_NOW(), @days, 'day')
+                    return true
+            )
+        """,
+        mapOf(
+            "days" to days
+        )
+    ).first()!!
+
+fun Db.newPeople(days: Int) = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Person::class.collection()}`
+                    filter x.${f(Person::createdAt)} != null
+                        and x.${f(Person::createdAt)} >= date_subtract(DATE_NOW(), @days, 'day')
+                    return true
+            )
+        """,
+    mapOf(
+        "days" to days
+    )
+).first()!!
+
 val Db.totalPeople
     get() = query(
         Int::class,
         """
             return count(`${Person::class.collection()}`)
+        """
+    ).first()!!
+
+val Db.totalDraftCards
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Card::class.collection()}`
+                    filter x.${f(Card::active)} != true
+                    return true
+            )
+        """
+    ).first()!!
+
+val Db.totalPublishedCards
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Card::class.collection()}`
+                    filter x.${f(Card::active)} == true
+                    return true
+            )
         """
     ).first()!!
 

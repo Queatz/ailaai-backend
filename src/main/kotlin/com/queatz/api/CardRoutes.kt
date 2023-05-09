@@ -185,7 +185,6 @@ fun Route.cardRoutes() {
                                 card.parent = null
                                 card.offline = true
                             }
-                        } else {
                         }
 
                         val cardWasActive = card.active == true
@@ -330,9 +329,6 @@ fun Route.cardRoutes() {
                     check(Card::equipped) {
                         card.parent = update.parent
                         card.offline = update.offline
-                    }
-                    if (card.photo == null && card.video == null && card.active == true) {
-                        card.active = false
                     }
 
                     if (card.parent == null && previousParent != null && card.active == true) {
