@@ -3,6 +3,7 @@ package com.queatz.api
 import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.respond
+import io.ktor.server.application.*
 import io.ktor.server.routing.*
 
 data class AppStats(
@@ -31,6 +32,11 @@ fun Route.statsRoutes() {
                 totalDraftCards = db.totalDraftCards,
                 totalPublishedCards = db.totalPublishedCards,
             )
+        }
+    }
+    get("/stats/searches") {
+        respond {
+            db.recentSearches(call.parameters["limit"]?.toInt() ?: 20)
         }
     }
 }

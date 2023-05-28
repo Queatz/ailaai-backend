@@ -1,6 +1,7 @@
 package com.queatz.api
 
 import com.queatz.db.*
+import com.queatz.parameter
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
@@ -35,7 +36,7 @@ fun Route.peopleRoutes() {
 
         get("/people/{id}/profile") {
             respond {
-                val person = db.document(Person::class, call.parameters["id"]!!)
+                val person = db.document(Person::class, parameter("id"))
                     ?: return@respond HttpStatusCode.NotFound
 
                 PersonProfile(
@@ -51,7 +52,7 @@ fun Route.peopleRoutes() {
 
         get("/people/{id}/profile/cards") {
             respond {
-                val person = db.document(Person::class, call.parameters["id"]!!)
+                val person = db.document(Person::class, parameter("id"))
                     ?: return@respond HttpStatusCode.NotFound
 
                 db.equippedCardsOfPerson(person.id!!, me.id!!)

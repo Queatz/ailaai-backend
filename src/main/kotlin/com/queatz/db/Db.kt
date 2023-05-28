@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.module.SimpleSerializers
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.queatz.plugins.json
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
@@ -171,6 +172,7 @@ internal fun String.asKey() = this.split("/").last()
 internal fun <T : Model> String.asId(klass: KClass<T>) = if (this.contains("/")) this else "${klass.collection()}/$this"
 
 fun <T : Model> KClass<T>.collection() = simpleName!!.lowercase()
-fun <T : Model> KClass<T>.graph() = "${collection()}-graph"
+fun <T : Edge> KClass<T>.graph() = "${collection()}-graph"
 
 fun Db.f(property: KMutableProperty1<*, *>) = property.name
+inline fun <reified T : Any> Db.v(value: T) = json.toJson(value)

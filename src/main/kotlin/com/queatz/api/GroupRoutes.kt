@@ -44,7 +44,7 @@ fun Route.groupRoutes() {
         get("/groups/{id}") {
             respond {
                 val person = me
-                db.group(me.id!!, call.parameters["id"]!!)?.also { group ->
+                db.group(me.id!!, parameter("id"))?.also { group ->
                     group.members?.find { it.person?.id == person.id }?.member?.let { member ->
                         member.seen = Clock.System.now()
                         db.update(member)
@@ -57,7 +57,7 @@ fun Route.groupRoutes() {
         post("/groups/{id}") {
             respond {
                 val groupUpdated = call.receive<Group>()
-                val member = db.member(me.id!!, call.parameters["id"]!!)
+                val member = db.member(me.id!!, parameter("id"))
 
                 if (member == null) {
                     HttpStatusCode.NotFound
@@ -79,7 +79,7 @@ fun Route.groupRoutes() {
 
         get("/groups/{id}/messages") {
             respond {
-                db.group(me.id!!, call.parameters["id"]!!)?.let {
+                db.group(me.id!!, parameter("id"))?.let {
                     db.messages(
                         it.group!!.id!!,
                         call.parameters["before"]?.toInstant(),
@@ -92,7 +92,7 @@ fun Route.groupRoutes() {
 //        get("/groups/{id}/members") {
 //            respond {
 //                // todo verify I'm in this group before returning members
-//                db.group(me.id!!, call.parameters["id"]!!)?.let {
+//                db.group(me.id!!, parameter("id"))?.let {
 //                    db.members(it.group!!.id!!)
 //                } ?: HttpStatusCode.NotFound
 //            }
@@ -101,13 +101,13 @@ fun Route.groupRoutes() {
         post("/groups/{id}/messages") {
             respond {
                 val message = call.receive<Message>()
-                val member = db.member(me.id!!, call.parameters["id"]!!)
+                val member = db.member(me.id!!, parameter("id"))
                 val me = me
 
                 if (member == null) {
                     HttpStatusCode.NotFound
                 } else {
-                    db.insert(Message(member.to?.asKey(), member.id, message.text, message.attachment))
+                    db.insert(Message(member.to?.asKey(), member.id, message.text, message.attachment, message.attachments))
                     val group = db.document(Group::class, member.to!!)!!
 
                     updateSeen(me, member, group)
@@ -121,20 +121,21 @@ fun Route.groupRoutes() {
         post("/groups/{id}/photos") {
             respond {
                 val person = me
-                val member = db.member(person.id!!, call.parameters["id"]!!)
+                val member = db.member(person.id!!, parameter("id"))
 
                 if (member == null) {
                     HttpStatusCode.NotFound
                 } else {
                     val group = db.document(Group::class, member.to!!)!!
-                    call.receiveFiles("photo", "group-${group.id}") { photosUrls ->
+                    call.receiveFiles("photo", "group-${group.id}") { photosUrls, params ->
                         val message = db.insert(
                             Message(
                                 member.to?.asKey(), member.id, null, json.toJson(
                                     PhotosAttachment(
                                         photos = photosUrls
                                     )
-                                )
+                                ),
+                                attachments = params["message"]?.let { json.fromJson(it, Message::class.java) }?.attachments
                             )
                         )
 
@@ -148,20 +149,21 @@ fun Route.groupRoutes() {
         post("/groups/{id}/audio") {
             respond {
                 val person = me
-                val member = db.member(person.id!!, call.parameters["id"]!!)
+                val member = db.member(person.id!!, parameter("id"))
 
                 if (member == null) {
                     HttpStatusCode.NotFound
                 } else {
                     val group = db.document(Group::class, member.to!!)!!
-                    call.receiveFile("audio", "group-${group.id}") { url ->
+                    call.receiveFile("audio", "group-${group.id}") { url, params ->
                         val message = db.insert(
                             Message(
                                 member.to?.asKey(), member.id, null, json.toJson(
                                     AudioAttachment(
                                         audio = url
                                     )
-                                )
+                                ),
+                                attachments = params.get("message")?.let { json.fromJson(it, Message::class.java) }?.attachments
                             )
                         )
 

@@ -1,6 +1,7 @@
 package com.queatz.api
 
 import com.queatz.db.*
+import com.queatz.parameter
 import com.queatz.plugins.app
 import com.queatz.plugins.db
 import com.queatz.plugins.me
@@ -36,7 +37,7 @@ fun Route.memberRoutes() {
 
         post("/members/{id}") {
             respond {
-                val member = db.document(Member::class, call.parameters["id"]!!)
+                val member = db.document(Member::class, parameter("id"))
 
                 if (member == null) {
                     HttpStatusCode.NotFound
@@ -59,7 +60,7 @@ fun Route.memberRoutes() {
 
         post("/members/{id}/delete") {
             respond {
-                val member = db.document(Member::class, call.parameters["id"]!!)
+                val member = db.document(Member::class, parameter("id"))
 
                 if (member == null) {
                     HttpStatusCode.NotFound

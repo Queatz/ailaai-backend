@@ -24,6 +24,26 @@ class VideoAttachment(
     override val type = "video"
 }
 
+class ReplyAttachment(
+    var message: String? = null
+) : MessageAttachment() {
+    override val type = "reply"
+}
+
+class StoryAttachment(
+    var story: String? = null,
+) : MessageAttachment() {
+    override val type = "story"
+}
+
+class StickerAttachment(
+    var photo: String? = null,
+    var sticker: String? = null,
+    var message: String? = null,
+) : MessageAttachment() {
+    override val type = "sticker"
+}
+
 abstract class MessageAttachment  {
     abstract val type: String
 }

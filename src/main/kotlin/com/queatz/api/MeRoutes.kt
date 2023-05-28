@@ -10,6 +10,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
 import kotlin.random.Random
 
 private data class LeaveCollaborationBody(val card: String)
@@ -45,9 +46,40 @@ fun Route.meRoutes() {
             }
         }
 
+        get("/me/stories") {
+            respond {
+                db.storiesOfPerson(me.id!!)
+            }
+        }
+
+        get("/me/presence") {
+            respond {
+                val me = me
+                db.presenceOfPerson(me.id!!).apply {
+                    if (me.geo != null) {
+                        unreadStoriesCount = db.countStories(me.geo!!, me.id!!, nearbyMaxDistance = 500_000.0, after = readStoriesUntil)
+                    }
+                }
+            }
+        }
+
+        post("/me/presence/read-stories") {
+            respond {
+                val me = me
+                val presence = db.presenceOfPerson(me.id!!).apply {
+                    readStoriesUntil = Clock.System.now()
+                }
+                db.update(presence).apply {
+                    if (me.geo != null) {
+                        unreadStoriesCount = db.countStories(me.geo!!, me.id!!, nearbyMaxDistance = 500_000.0, after = readStoriesUntil)
+                    }
+                }
+            }
+        }
+
         get("/me/profile") {
             respond {
-                db.profile(me.id!!) ?: HttpStatusCode.NotFound
+                db.profile(me.id!!)
             }
         }
 
@@ -78,7 +110,7 @@ fun Route.meRoutes() {
             respond {
                 val person = me
 
-                call.receiveFile("photo", "profile-${person.id!!}") {
+                call.receiveFile("photo", "profile-${person.id!!}") { it, _ ->
                     val profile = db.profile(me.id!!)
                     profile.photo = it
                     profile.video = null
@@ -91,7 +123,7 @@ fun Route.meRoutes() {
             respond {
                 val person = me
 
-                call.receiveFile("photo", "profile-${person.id!!}") {
+                call.receiveFile("photo", "profile-${person.id!!}") { it, _ ->
                     val profile = db.profile(me.id!!)
                     profile.video = it
                     profile.photo = null
@@ -165,7 +197,7 @@ fun Route.meRoutes() {
         post("/me/photo") {
             respond {
                 val person = me
-                call.receiveFile("photo", "person-${person.id}") {
+                call.receiveFile("photo", "person-${person.id}") { it, _ ->
                     person.photo = it
                     db.update(person)
                 }

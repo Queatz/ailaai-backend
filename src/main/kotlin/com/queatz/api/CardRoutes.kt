@@ -14,7 +14,7 @@ fun Route.cardRoutes() {
     authenticate(optional = true) {
         get("/cards/{id}") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
 
                 if (card == null) {
                     HttpStatusCode.NotFound
@@ -28,7 +28,7 @@ fun Route.cardRoutes() {
 
         get("/cards/{id}/cards") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
 
                 if (card == null) {
                     HttpStatusCode.NotFound
@@ -56,7 +56,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = 500_000,
+                    nearbyMaxDistance = 500_000.0,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 ) + db.cardsOfPerson(me.id!!)).flatMap {
@@ -80,11 +80,17 @@ fun Route.cardRoutes() {
                 db.update(person)
                 db.updateEquippedCards(person.id!!, geo.scatterGeo())
 
+                val search = call.parameters["search"]
+                    ?.takeIf { it.isNotBlank() }
+                    ?.also { search ->
+                        db.insert(Search(search))
+                    }
+
                 db.explore(
                     person = person.id!!,
                     geo = geo,
-                    search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = 500_000,
+                    search = search,
+                    nearbyMaxDistance = 500_000.0,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 )
@@ -124,7 +130,7 @@ fun Route.cardRoutes() {
 
         get("/cards/{id}/group") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -137,7 +143,7 @@ fun Route.cardRoutes() {
 
         get("/cards/{id}/people") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -152,7 +158,7 @@ fun Route.cardRoutes() {
 
         post("/cards/{id}") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -343,7 +349,7 @@ fun Route.cardRoutes() {
 
         post("/cards/{id}/photo") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -351,7 +357,7 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    call.receiveFile("photo", "card-${card.id}") {
+                    call.receiveFile("photo", "card-${card.id}") { it, _ ->
                         card.photo = it
                         db.update(card)
 
@@ -368,7 +374,7 @@ fun Route.cardRoutes() {
 
         post("/cards/{id}/video") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -376,7 +382,7 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    call.receiveFile("photo", "card-${card.id}") {
+                    call.receiveFile("photo", "card-${card.id}") { it, _ ->
                         card.video = it
                         db.update(card)
 
@@ -393,7 +399,7 @@ fun Route.cardRoutes() {
 
         post("/cards/{id}/delete") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -428,7 +434,7 @@ fun Route.cardRoutes() {
 
         post("/cards/{id}/save") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {
@@ -442,7 +448,7 @@ fun Route.cardRoutes() {
 
         post("/cards/{id}/unsave") {
             respond {
-                val card = db.document(Card::class, call.parameters["id"]!!)
+                val card = db.document(Card::class, parameter("id"))
                 val person = me
 
                 if (card == null) {

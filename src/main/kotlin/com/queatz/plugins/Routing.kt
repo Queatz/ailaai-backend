@@ -32,6 +32,8 @@ fun Application.configureRouting() {
         hmsRoutes()
         crashRoutes()
         statsRoutes()
+        storyRoutes()
+        stickerRoutes()
 
         static("/static") {
             files("static")

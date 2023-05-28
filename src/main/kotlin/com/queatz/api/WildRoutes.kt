@@ -1,8 +1,5 @@
 package com.queatz.api
 
-import com.queatz.MessagePushData
-import com.queatz.PushAction
-import com.queatz.PushData
 import com.queatz.db.*
 import com.queatz.plugins.*
 import io.ktor.http.*
@@ -57,28 +54,11 @@ fun Route.wildRoutes() {
 
             // todo maybe also send a notification for the card message
 
-            val pushData = PushData(
-                PushAction.Message, MessagePushData(
-                    Group().apply { id = group.id },
-                    Person(name = wildPerson.name).apply { id = wildPerson.id },
-                    Message(text = wildReply.message.ellipsize(), attachment = attachment)
-                )
+            notify.message(
+                group = group,
+                from = wildPerson,
+                message = Message(text = wildReply.message.ellipsize())
             )
-
-            db.memberDevices(group.id!!).filter {
-                it.member?.id != wildMember.id
-            }.apply {
-                filter { it.member?.hide == true }.forEach {
-                    it.member!!.hide = false
-                    db.update(it.member!!)
-                }
-
-                forEach {
-                    it.devices?.forEach { device ->
-                        push.sendPush(device, pushData)
-                    }
-                }
-            }
 
             HttpStatusCode.OK
         }
