@@ -17,7 +17,14 @@ fun Route.storyRoutes() {
         get("/stories/{id}") {
             respond {
                 db.story(parameter("id"))
-                    //?.takeIf { it.published == true || it.person == meOrNull?.id } // todo, authorize?
+                    //?.takeIf { it.published == true || it.person == meOrNull?.id } // todo, authorize? how to share a draft
+                    ?: HttpStatusCode.NotFound
+            }
+        }
+        get("/urls/stories/{url}") {
+            respond {
+                db.storyByUrl(parameter("url"))
+                    //?.takeIf { it.published == true || it.person == meOrNull?.id } // todo, authorize? how to share a draft
                     ?: HttpStatusCode.NotFound
             }
         }

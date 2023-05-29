@@ -212,6 +212,7 @@ fun Db.story(story: String) = one(
     """
         for x in @@collection
             filter x._key == @story
+            limit 1
             return ${withAuthors("x")}
     """.trimIndent(),
     mapOf(
@@ -226,7 +227,9 @@ fun Db.storyByUrl(url: String) = one(
     Story::class,
     """
         for x in @@collection
-            filter x.${f(Story::url)} == @url
+            filter x._key == @url
+                or x.${f(Story::url)} == @url
+            limit 1
             return ${withAuthors("x")}
     """.trimIndent(),
     mapOf(
