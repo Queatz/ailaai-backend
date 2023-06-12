@@ -42,7 +42,7 @@ fun Route.storyRoutes() {
                 db.stories(
                     geo,
                     me.id!!,
-                    500_000.0,
+                    defaultNearbyMaxDistanceKm,
                     call.parameters["offset"]?.toInt() ?: 0,
                     call.parameters["limit"]?.toInt() ?: 20
                 )

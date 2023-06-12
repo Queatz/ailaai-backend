@@ -14,9 +14,7 @@ fun Route.stickerRoutes() {
     authenticate(optional = true) {
         get("/sticker-packs/{id}") {
             respond {
-                db.stickerPackWithStickers(parameter("id"))?.takeIf {
-                    it.person == meOrNull?.id || it.active == true
-                } ?: HttpStatusCode.NotFound
+                db.stickerPackWithStickers(parameter("id")) ?: HttpStatusCode.NotFound
             }
         }
     }

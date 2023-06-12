@@ -56,7 +56,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = 500_000.0,
+                    nearbyMaxDistance = defaultNearbyMaxDistanceKm,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 ) + db.cardsOfPerson(me.id!!)).flatMap {
@@ -90,7 +90,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = search,
-                    nearbyMaxDistance = 500_000.0,
+                    nearbyMaxDistance = defaultNearbyMaxDistanceKm,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 )
@@ -131,12 +131,12 @@ fun Route.cardRoutes() {
         get("/cards/{id}/group") {
             respond {
                 val card = db.document(Card::class, parameter("id"))
-                val person = me
 
                 if (card == null) {
                     HttpStatusCode.NotFound
                 } else {
-                    db.group(listOf(me.id!!, card.person!!)) ?: app.createGroup(listOf(person.id!!, card.person!!))
+                    val people = listOf(me.id!!, card.person!!).distinct()
+                    db.group(people) ?: app.createGroup(people)
                 }
             }
         }

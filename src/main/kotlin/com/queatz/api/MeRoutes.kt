@@ -2,6 +2,7 @@ package com.queatz.api
 
 import com.queatz.db.*
 import com.queatz.plugins.db
+import com.queatz.plugins.defaultNearbyMaxDistanceKm
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
 import com.queatz.receiveFile
@@ -57,7 +58,12 @@ fun Route.meRoutes() {
                 val me = me
                 db.presenceOfPerson(me.id!!).apply {
                     if (me.geo != null) {
-                        unreadStoriesCount = db.countStories(me.geo!!, me.id!!, nearbyMaxDistance = 500_000.0, after = readStoriesUntil)
+                        unreadStoriesCount = db.countStories(
+                            me.geo!!,
+                            me.id!!,
+                            nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                            after = readStoriesUntil
+                        )
                     }
                 }
             }
@@ -71,7 +77,12 @@ fun Route.meRoutes() {
                 }
                 db.update(presence).apply {
                     if (me.geo != null) {
-                        unreadStoriesCount = db.countStories(me.geo!!, me.id!!, nearbyMaxDistance = 500_000.0, after = readStoriesUntil)
+                        unreadStoriesCount = db.countStories(
+                            me.geo!!,
+                            me.id!!,
+                            nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                            after = readStoriesUntil
+                        )
                     }
                 }
             }

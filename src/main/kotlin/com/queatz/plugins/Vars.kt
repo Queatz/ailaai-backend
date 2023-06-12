@@ -21,3 +21,5 @@ val push = Push()
 val app = App()
 val json = Gson()
 val notify = Notify()
+
+const val defaultNearbyMaxDistanceKm = 100_000.0
