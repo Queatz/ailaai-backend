@@ -4,6 +4,7 @@ import com.queatz.db.*
 import com.queatz.parameter
 import com.queatz.plugins.db
 import com.queatz.plugins.me
+import com.queatz.plugins.meOrNull
 import com.queatz.plugins.respond
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -22,6 +23,51 @@ data class PersonProfile(
 )
 
 fun Route.peopleRoutes() {
+
+    get("/people/{id}/profile") {
+        respond {
+            val person = db.document(Person::class, parameter("id"))
+                ?: return@respond HttpStatusCode.NotFound
+
+            PersonProfile(
+                person,
+                db.profile(person.id!!),
+                ProfileStats(
+                    friendsCount = db.friendsCount(person.id!!),
+                    cardCount = db.cardsCount(person.id!!),
+                )
+            )
+        }
+    }
+
+    get("/profile/url/{url}") {
+        respond {
+            val profile = db.profileByUrl(parameter("url"))
+                ?: return@respond HttpStatusCode.NotFound.description("Profile not found")
+
+            PersonProfile(
+                db.document(Person::class, profile.person!!)
+                    ?: return@respond HttpStatusCode.NotFound.description("Person not found"),
+                profile,
+                ProfileStats(
+                    friendsCount = db.friendsCount(profile.person!!),
+                    cardCount = db.cardsCount(profile.person!!),
+                )
+            )
+        }
+    }
+
+    authenticate(optional = true) {
+        get("/people/{id}/profile/cards") {
+            respond {
+                val person = db.document(Person::class, parameter("id"))
+                    ?: return@respond HttpStatusCode.NotFound
+
+                db.equippedCardsOfPerson(person.id!!, meOrNull?.id)
+            }
+        }
+    }
+
     authenticate {
         get("/people") {
             respond {
@@ -31,31 +77,6 @@ fun Route.peopleRoutes() {
                     search ?: return@respond HttpStatusCode.BadRequest.description("Missing 'search' parameter"),
                     me.geo
                 ).forApi()
-            }
-        }
-
-        get("/people/{id}/profile") {
-            respond {
-                val person = db.document(Person::class, parameter("id"))
-                    ?: return@respond HttpStatusCode.NotFound
-
-                PersonProfile(
-                    person,
-                    db.profile(person.id!!),
-                    ProfileStats(
-                        friendsCount = db.friendsCount(person.id!!),
-                        cardCount = db.cardsCount(person.id!!),
-                    )
-                )
-            }
-        }
-
-        get("/people/{id}/profile/cards") {
-            respond {
-                val person = db.document(Person::class, parameter("id"))
-                    ?: return@respond HttpStatusCode.NotFound
-
-                db.equippedCardsOfPerson(person.id!!, me.id!!)
             }
         }
     }

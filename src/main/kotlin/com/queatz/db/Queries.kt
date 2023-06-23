@@ -347,7 +347,7 @@ fun Db.countStories(geo: List<Double>, person: String, nearbyMaxDistance: Double
 /**
  * @person The person to fetch equipped cards for
  */
-fun Db.equippedCardsOfPerson(person: String, me: String) = list(
+fun Db.equippedCardsOfPerson(person: String, me: String?) = list(
     Card::class,
     """
         for x in @@collection
@@ -358,7 +358,7 @@ fun Db.equippedCardsOfPerson(person: String, me: String) = list(
             return merge(
                 x,
                 {
-                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @me or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
+                    cardCount: count(for card in @@collection filter ((@me != null && card.${f(Card::person)} == @me) or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
                 }
             )
     """.trimIndent(),
@@ -625,6 +625,22 @@ fun Db.profile(person: String) = one(
         "person" to person
     )
 )!!
+
+/**
+ * @url the url to fetch a profile for
+ */
+fun Db.profileByUrl(url: String) = one(
+    Profile::class,
+    """
+    for x in @@collection
+        filter x.${f(Profile::url)} == @url
+        limit 1
+        return x
+    """.trimIndent(),
+    mapOf(
+        "url" to url
+    )
+)
 
 /**
  * @person The current user
