@@ -87,16 +87,20 @@ fun Route.storyRoutes() {
                     story.url = story.title!!.urlize().uniqueInDb(story.id!!)
 
                     // Share to groups
-                    db.storyDraft(me.id!!, story.id!!)?.groupDetails?.let { groups ->
+                    db.storyDraft(me.id!!, story.id!!)?.groups?.takeIf { it.isNotEmpty() }?.let { groupIds ->
+                        val groups = db.groups(me.id!!, groupIds)
                         val attachment = json.toJson(StoryAttachment(story.id!!))
                         groups.forEach { group ->
-                            db.insert(Message(group.id!!, me.id, text = null, attachment))
+                            db.insert(Message(group.id, me.id, text = null, attachment))
 
                             notify.message(
                                 group = group,
                                 from = me,
                                 message = Message(text = null, attachment = attachment)
                             )
+
+                            group.seen = Clock.System.now()
+                            db.update(group)
                         }
                     }
                 } else if (story.published != true) {
@@ -181,4 +185,4 @@ fun Route.storyRoutes() {
     }
 }
 
-fun String.urlize() = "\\W+".toRegex().replace(lowercase(), "-").encodeURLPathPart()
+fun String.urlize() = "\\W+".toRegex().replace(trim().lowercase(), "-").encodeURLPathPart()
