@@ -53,6 +53,16 @@ fun Route.meRoutes() {
             }
         }
 
+        get("/me/groups/hidden") {
+            respond {
+                val me = me
+                me.seen = Clock.System.now()
+                db.update(me)
+
+                db.hiddenGroups(me.id!!).forApi()
+            }
+        }
+
         get("/me/presence") {
             respond {
                 val me = me

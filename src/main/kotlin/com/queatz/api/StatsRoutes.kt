@@ -39,4 +39,9 @@ fun Route.statsRoutes() {
             db.recentSearches(call.parameters["limit"]?.toInt() ?: 20)
         }
     }
+    get("/stats/feedback") {
+        respond {
+            db.recentFeedback(call.parameters["limit"]?.toInt() ?: 20)
+        }
+    }
 }

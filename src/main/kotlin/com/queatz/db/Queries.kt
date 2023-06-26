@@ -28,6 +28,19 @@ fun Db.recentSearches(limit: Int = 50) = list(
     )
 )
 
+fun Db.recentFeedback(limit: Int = 50) = list(
+    AppFeedback::class,
+    """
+        for x in @@collection
+            sort x.${f(AppFeedback::createdAt)} desc
+            limit @limit
+            return x
+    """.trimIndent(),
+    mapOf(
+        "limit" to limit
+    )
+)
+
 fun Db.activePeople(days: Int) = query(
         Int::class,
         """
@@ -662,6 +675,26 @@ fun Db.presenceOfPerson(person: String) = one(
     )
 )!!
 
+private fun Db.groupExtended(groupVar: String = "group") = """{
+    $groupVar,
+    members: (
+        for person, member in inbound $groupVar graph `${Member::class.graph()}`
+            filter member.${f(Member::gone)} != true
+            sort member.${f(Member::seen)} desc
+            return {
+                person,
+                member
+            }
+    ),
+    latestMessage: first(
+        for message in `${Message::class.collection()}`
+            filter message.${f(Message::group)} == group._key
+            sort message.${f(Message::createdAt)} desc
+            limit 1
+            return message
+    )
+}"""
+
 /**
  * @person The current user
  */
@@ -672,25 +705,7 @@ fun Db.groups(person: String) = query(
             filter edge.${f(Member::hide)} != true
                 and edge.${f(Member::gone)} != true
             sort group.${f(Group::seen)} desc
-            return {
-                group,
-                members: (
-                    for person, member in inbound group graph `${Member::class.graph()}`
-                        filter member.${f(Member::gone)} != true
-                        sort member.${f(Member::seen)} desc
-                        return {
-                            person,
-                            member
-                        }
-                ),
-                latestMessage: first(
-                    for message in `${Message::class.collection()}`
-                        filter message.${f(Message::group)} == group._key
-                        sort message.${f(Message::createdAt)} desc
-                        limit 1
-                        return message
-                )
-            }
+            return ${groupExtended()}
     """.trimIndent(),
     mapOf(
         "person" to person.asId(Person::class)
@@ -707,31 +722,30 @@ fun Db.group(person: String, group: String) = query(
         for group in outbound @person graph `${Member::class.graph()}`
             filter group._key == @group
             limit 1
-            return {
-                group,
-                members: (
-                    for person, member in inbound group graph `${Member::class.graph()}`
-                        filter member.${f(Member::gone)} != true
-                        sort member.${f(Member::seen)} desc
-                        return {
-                            person,
-                            member
-                        }
-                ),
-                latestMessage: first(
-                    for message in `${Message::class.collection()}`
-                        filter message.${f(Message::group)} == group._key
-                        sort message.${f(Message::createdAt)} desc
-                        limit 1
-                        return message
-                )
-            }
+            return ${groupExtended()}
     """.trimIndent(),
     mapOf(
         "person" to person.asId(Person::class),
         "group" to group,
     )
 ).first()!!
+
+/**
+ * @me The current user
+ */
+fun Db.hiddenGroups(me: String) = query(
+    GroupExtended::class,
+    """
+        for group, edge in outbound @person graph `${Member::class.graph()}`
+            filter edge.${f(Member::hide)} == true
+                and edge.${f(Member::gone)} != true
+            sort group.${f(Group::seen)} desc
+            return ${groupExtended()}
+    """.trimIndent(),
+    mapOf(
+        "person" to me.asId(Person::class)
+    )
+)
 
 /**
  * @person The current user

@@ -160,7 +160,8 @@ enum class PersonSource {
 
 enum class AppFeedbackType {
     Suggestion,
-    Issue
+    Issue,
+    Other
 }
 
 open class Model(

@@ -177,11 +177,11 @@ fun Route.groupRoutes() {
 }
 
 
-private fun List<GroupExtended>.forApi() = onEach {
+fun List<GroupExtended>.forApi() = onEach {
     it.forApi()
 }
 
-private fun GroupExtended.forApi() = also {
+fun GroupExtended.forApi() = also {
     it.members?.onEach {
         it.person?.geo = null
     }
