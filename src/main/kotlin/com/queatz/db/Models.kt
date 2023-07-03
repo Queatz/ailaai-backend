@@ -37,7 +37,12 @@ class Profile(
 
 class Invite(
     var person: String? = null,
-    var code: String? = null
+    var group: String? = null,
+    var about: String? = null,
+    var code: String? = null,
+    var expiry: Instant? = null,
+    var remaining: Int? = null,
+    var total: Int? = null
 ) : Model()
 
 class Save(
@@ -128,7 +133,8 @@ class Device(
 ) : Model()
 
 class Search(
-    var search: String? = null
+    var search: String? = null,
+    var source: SearchSource? = null
 ) : Model()
 
 class Story(
@@ -155,6 +161,10 @@ enum class DeviceType {
 }
 
 enum class PersonSource {
+    Web
+}
+
+enum class SearchSource {
     Web
 }
 

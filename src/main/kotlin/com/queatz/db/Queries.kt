@@ -495,7 +495,7 @@ fun Db.updateEquippedCards(person: String, geo: List<Double>) = query(
  * @offset Page offset
  * @limit Page size
  */
-fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearbyMaxDistance: Double = 0.0, offset: Int = 0, limit: Int = 20) = list(
+fun Db.explore(person: String?, geo: List<Double>, search: String? = null, nearbyMaxDistance: Double = 0.0, offset: Int = 0, limit: Int = 20) = list(
     Card::class,
     """
         for x in @@collection
@@ -503,24 +503,17 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
                 and (x.${f(Card::parent)} == null or @search != null) // When searching, include cards inside other cards
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
                 and x.${f(Card::offline)} != true
-                and (x.${f(Card::person)} != @personKey or x.${f(Card::equipped)} != true)
+                ${if (person == null) "" else "and (x.${f(Card::person)} != @personKey or x.${f(Card::equipped)} != true)"}
                 and (
                     @search == null 
                         or contains(lower(x.${f(Card::name)}), @search)
                         or contains(lower(x.${f(Card::location)}), @search)
                         or contains(lower(x.${f(Card::conversation)}), @search)
+                        or (is_array(x.${f(Card::categories)}) and first(for c in (x.${f(Card::categories)} || []) filter contains(lower(c), @search) return true) == true)
                 )
             let d = x.${f(Card::geo)} == null ? null : distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             filter (
-                    (d != null and d <= @nearbyMaxDistance) or (x.${f(Card::equipped)} == true and first(
-                        for group in outbound @person graph `${Member::class.graph()}`
-                            for friend, member in inbound group graph `${Member::class.graph()}`
-                                filter member.${f(Member::gone)} != true
-                                    and friend._key == x.${f(Card::person)}
-                                limit 1
-                                return true
-                    ) == true
-                )
+                    (d != null and d <= @nearbyMaxDistance) ${if (person == null) "" else orIsFriendProfileCard()}
             )
             sort d == null, d
             limit @offset, @limit
@@ -531,16 +524,27 @@ fun Db.explore(person: String, geo: List<Double>, search: String? = null, nearby
                 }
             )
     """.trimIndent(),
-    mapOf(
-        "personKey" to person.asKey(),
-        "person" to person.asId(Person::class),
-        "geo" to geo,
-        "search" to search?.trim()?.lowercase(),
-        "nearbyMaxDistance" to nearbyMaxDistance,
-        "offset" to offset,
-        "limit" to limit
-    )
+    buildMap {
+        if (person != null) {
+            put("personKey", person.asKey())
+            put("person", person.asId(Person::class))
+        }
+        put("geo", geo)
+        put("search", search?.trim()?.lowercase())
+        put("nearbyMaxDistance", nearbyMaxDistance)
+        put("offset", offset)
+        put("limit", limit)
+    }
 )
+
+fun Db.orIsFriendProfileCard() = """or (x.${f(Card::equipped)} == true and first(
+for group in outbound @person graph `${Member::class.graph()}`
+    for friend, member in inbound group graph `${Member::class.graph()}`
+        filter member.${f(Member::gone)} != true
+            and friend._key == x.${f(Card::person)}
+        limit 1
+        return true
+) == true)"""
 
 fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: Int = 20) = list(
     Card::class,

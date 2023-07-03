@@ -39,6 +39,40 @@ fun Route.cardRoutes() {
                 }
             }
         }
+
+        get("/cards") {
+            respond {
+                val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
+
+                if (geo.size != 2) {
+                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
+                }
+
+                val person = meOrNull?.also {
+                    it.geo = geo
+                    db.update(it)
+                    db.updateEquippedCards(it.id!!, geo.scatterGeo())
+                }
+
+                val search = call.parameters["search"]
+                    ?.takeIf { it.isNotBlank() }
+                    ?.also { search ->
+                        db.insert(Search(
+                            search = search,
+                            source = if (person == null) SearchSource.Web else null
+                        ))
+                    }
+
+                db.explore(
+                    person = person?.id,
+                    geo = geo,
+                    search = search,
+                    nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                    offset = call.parameters["offset"]?.toInt() ?: 0,
+                    limit = call.parameters["limit"]?.toInt() ?: 20
+                )
+            }
+        }
     }
 
     authenticate {
@@ -64,36 +98,6 @@ fun Route.cardRoutes() {
                 }
                     .distinct()
                     .sorted()
-            }
-        }
-
-        get("/cards") {
-            respond {
-                val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
-
-                if (geo.size != 2) {
-                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
-                }
-
-                val person = me
-                person.geo = geo
-                db.update(person)
-                db.updateEquippedCards(person.id!!, geo.scatterGeo())
-
-                val search = call.parameters["search"]
-                    ?.takeIf { it.isNotBlank() }
-                    ?.also { search ->
-                        db.insert(Search(search))
-                    }
-
-                db.explore(
-                    person = person.id!!,
-                    geo = geo,
-                    search = search,
-                    nearbyMaxDistance = defaultNearbyMaxDistanceKm,
-                    offset = call.parameters["offset"]?.toInt() ?: 0,
-                    limit = call.parameters["limit"]?.toInt() ?: 20
-                )
             }
         }
 
