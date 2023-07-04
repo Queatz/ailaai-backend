@@ -2,6 +2,7 @@ package com.queatz.api
 
 import com.queatz.db.Report
 import com.queatz.db.recentReports
+import com.queatz.parameter
 import com.queatz.plugins.db
 import com.queatz.plugins.me
 import com.queatz.plugins.respond
@@ -22,6 +23,10 @@ fun Route.reportRoutes() {
     authenticate {
         post("/report") {
             respond {
+                if (parameter("password") != "letmein") {
+                    return@respond HttpStatusCode.NotFound
+                }
+
                 call.receive<Report>().also { report ->
                     db.insert(
                         Report(
