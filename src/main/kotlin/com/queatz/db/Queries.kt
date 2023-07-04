@@ -15,6 +15,19 @@ fun Db.recentCrashes(limit: Int = 50) = list(
     )
 )
 
+fun Db.recentReports(limit: Int = 50) = list(
+    Report::class,
+    """
+        for x in @@collection
+            sort x.${f(Card::createdAt)} desc
+            limit @limit
+            return x
+    """.trimIndent(),
+    mapOf(
+        "limit" to limit
+    )
+)
+
 fun Db.recentSearches(limit: Int = 50) = list(
     Search::class,
     """

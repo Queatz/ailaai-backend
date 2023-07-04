@@ -21,6 +21,14 @@ class Settings(
     var language: String? = null
 ) : Model()
 
+class Report(
+    var reporter: String? = null,
+    var reporterMessage: String? = null,
+    var urgent: Boolean? = null,
+    var entity: String? = null,
+    var type: ReportType? = null
+) : Model()
+
 class Presence(
     var person: String? = null,
     var readStoriesUntil: Instant? = null,
@@ -171,6 +179,13 @@ enum class SearchSource {
 enum class AppFeedbackType {
     Suggestion,
     Issue,
+    Other
+}
+
+enum class ReportType {
+    Safety,
+    Content,
+    Spam,
     Other
 }
 

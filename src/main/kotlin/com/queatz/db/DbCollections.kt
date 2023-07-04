@@ -66,6 +66,9 @@ fun collections() = listOf(
     },
     Message::class.db {},
     Crash::class.db {},
+    Report::class.db {
+        ensurePersistentIndex(listOf(Report::type.name), PersistentIndexOptions())
+    },
     AppFeedback::class.db {},
     Sticker::class.db {
         ensurePersistentIndex(listOf(Sticker::pack.name), PersistentIndexOptions())

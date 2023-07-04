@@ -35,6 +35,7 @@ fun Application.configureRouting() {
         storyRoutes()
         stickerRoutes()
         appFeedbackRoutes()
+        reportRoutes()
 
         static("/static") {
             files("static")
