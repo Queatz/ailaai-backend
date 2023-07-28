@@ -1,11 +1,9 @@
 package com.queatz.api
 
 import com.queatz.db.*
-import com.queatz.plugins.db
-import com.queatz.plugins.defaultNearbyMaxDistanceKm
-import com.queatz.plugins.me
-import com.queatz.plugins.respond
+import com.queatz.plugins.*
 import com.queatz.receiveFile
+import com.queatz.scatterGeo
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -30,9 +28,39 @@ fun Route.meRoutes() {
             }
         }
 
+        post("/me/geo") {
+            respond {
+                val geo = call.receive<List<Double>>()
+                if (geo.size != 2) {
+                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
+                }
+
+                me.let {
+                    it.geo = geo
+                    db.update(it)
+                    db.updateEquippedCards(it.id!!, geo.scatterGeo())
+                }
+                HttpStatusCode.NoContent
+            }
+        }
+
         get("/me/transfer") {
             respond {
                 db.transferOfPerson(me.id!!) ?: db.insert(
+                    Transfer(
+                        person = me.id!!,
+                        code = (1..16).token()
+                    )
+                )
+            }
+        }
+
+        post("/me/transfer/refresh") {
+            respond {
+                db.transferOfPerson(me.id!!)?.let {
+                    db.delete(it)
+                }
+                db.insert(
                     Transfer(
                         person = me.id!!,
                         code = (1..16).token()

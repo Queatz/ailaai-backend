@@ -313,7 +313,8 @@ fun Db.stories(geo: List<Double>, person: String, nearbyMaxDistance: Double, off
             let d = x.${f(Story::geo)} == null ? null : distance(x.${f(Story::geo)}[0], x.${f(Story::geo)}[1], @geo[0], @geo[1])
             filter (
                 (d != null and d <= @nearbyMaxDistance) or x.${f(Story::person)} == @personKey or first(
-                    for group in outbound @person graph `${Member::class.graph()}`
+                    for group, myMember in outbound @person graph `${Member::class.graph()}`
+                        filter myMember.${f(Member::gone)} != true
                         for friend, member in inbound group graph `${Member::class.graph()}`
                             filter member.${f(Member::gone)} != true
                                 and friend._key == x.${f(Story::person)}
@@ -321,8 +322,7 @@ fun Db.stories(geo: List<Double>, person: String, nearbyMaxDistance: Double, off
                             return true
                 ) == true
             )
-            sort d == null, d
-            sort x.${f(Story::createdAt)} desc
+            sort x.${f(Story::publishDate)} desc, x.${f(Story::createdAt)} desc
             limit @offset, @limit
             return ${withAuthors("x")}
     """.trimIndent(),
@@ -551,7 +551,8 @@ fun Db.explore(person: String?, geo: List<Double>, search: String? = null, nearb
 )
 
 fun Db.orIsFriendProfileCard() = """or (x.${f(Card::equipped)} == true and first(
-for group in outbound @person graph `${Member::class.graph()}`
+for group, myMember in outbound @person graph `${Member::class.graph()}`
+    filter myMember.${f(Member::gone)} != true
     for friend, member in inbound group graph `${Member::class.graph()}`
         filter member.${f(Member::gone)} != true
             and friend._key == x.${f(Card::person)}

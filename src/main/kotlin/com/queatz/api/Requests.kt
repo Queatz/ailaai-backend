@@ -1,7 +1,7 @@
 package com.queatz.api
 
 data class SignUpRequest(
-    val code: String
+    val code: String?
 )
 
 data class SignInRequest(

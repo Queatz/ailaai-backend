@@ -48,11 +48,7 @@ fun Route.cardRoutes() {
                     return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
                 }
 
-                val person = meOrNull?.also {
-                    it.geo = geo
-                    db.update(it)
-                    db.updateEquippedCards(it.id!!, geo.scatterGeo())
-                }
+                val person = meOrNull
 
                 val search = call.parameters["search"]
                     ?.takeIf { it.isNotBlank() }

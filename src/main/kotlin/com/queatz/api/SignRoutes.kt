@@ -20,7 +20,10 @@ fun Route.signRoutes() {
         respond {
             val code = call.receive<SignUpRequest>().code
 
-            if (code == "000000" && db.totalPeople == 0) {
+            if (code == null) {
+                val person = db.insert(Person(seen = Clock.System.now()))
+                TokenResponse(jwt(person.id!!))
+            } else if (code == "000000" && db.totalPeople == 0) {
                 val person = db.insert(Person(seen = Clock.System.now()))
                 TokenResponse(jwt(person.id!!))
             } else {
@@ -58,8 +61,6 @@ fun Route.signRoutes() {
                 if (person == null) {
                     HttpStatusCode.NotFound.description("Transfer code is orphaned")
                 } else {
-                    db.delete(transfer)
-
                     TokenResponse(jwt(person.id!!))
                 }
             }
