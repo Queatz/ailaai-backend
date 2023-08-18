@@ -118,6 +118,7 @@ fun Route.cardRoutes() {
                             person.id!!,
                             name = card.name,
                             conversation = card.conversation,
+                            options = card.options,
                             parent = parentCard?.id,
                             equipped = card.equipped,
                             offline = card.offline,
@@ -322,6 +323,7 @@ fun Route.cardRoutes() {
                     }
                     check(Card::name)
                     check(Card::conversation)
+                    check(Card::options)
                     check(Card::photo) {
                         card.video = update.video
                     }
