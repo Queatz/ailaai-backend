@@ -1,9 +1,6 @@
 package com.queatz.api
 
-import com.queatz.db.Person
-import com.queatz.db.invite
-import com.queatz.db.totalPeople
-import com.queatz.db.transferWithCode
+import com.queatz.db.*
 import com.queatz.plugins.app
 import com.queatz.plugins.db
 import com.queatz.plugins.jwt
@@ -49,13 +46,12 @@ fun Route.signRoutes() {
 
     post("/sign/in") {
         respond {
-            val code = call.receive<SignInRequest>().code
+            val req = call.receive<SignInRequest>()
 
-            val transfer = db.transferWithCode(code)
+            val transfer = req.code?.let(db::transferWithCode)
+            val linkDeviceToken = req.link?.let(db::linkDeviceToken)?.takeIf { it.person != null }
 
-            if (transfer == null) {
-                HttpStatusCode.NotFound.description("Transfer code '$code' not found")
-            } else {
+            if (transfer != null) {
                 val person = db.document(Person::class, transfer.person!!)
 
                 if (person == null) {
@@ -63,6 +59,17 @@ fun Route.signRoutes() {
                 } else {
                     TokenResponse(jwt(person.id!!))
                 }
+            } else if (linkDeviceToken != null) {
+                val person = db.document(Person::class, linkDeviceToken.person!!)
+
+                if (person == null) {
+                    HttpStatusCode.NotFound.description("Link device token is orphaned")
+                } else {
+                    db.delete(linkDeviceToken)
+                    TokenResponse(jwt(person.id!!))
+                }
+            } else {
+                HttpStatusCode.NotFound
             }
         }
     }

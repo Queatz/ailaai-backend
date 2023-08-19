@@ -5,5 +5,6 @@ data class SignUpRequest(
 )
 
 data class SignInRequest(
-    val code: String
+    val code: String? = null,
+    val link: String? = null
 )

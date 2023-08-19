@@ -13,6 +13,9 @@ fun collections() = listOf(
         ensurePersistentIndex(listOf(Transfer::person.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Transfer::code.name), PersistentIndexOptions())
     },
+    LinkDeviceToken::class.db {
+        ensurePersistentIndex(listOf(LinkDeviceToken::token.name), PersistentIndexOptions())
+    },
     Device::class.db {
         ensurePersistentIndex(listOf(Device::person.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Device::type.name, Device::token.name), PersistentIndexOptions())

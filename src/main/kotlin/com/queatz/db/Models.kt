@@ -63,6 +63,11 @@ class Transfer(
     var code: String? = null
 ) : Model()
 
+class LinkDeviceToken(
+    var token: String? = null,
+    var person: String? = null
+) : Model()
+
 class Crash(
     var details: String? = null
 ) : Model()

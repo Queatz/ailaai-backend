@@ -15,6 +15,7 @@ import kotlin.time.Duration.Companion.days
 fun Application.configureRouting() {
     launch {
         // Delete all expired invite codes every hour
+        // Delete all expired link device tokens every hour
     }
 
     push.start(this)
@@ -37,6 +38,7 @@ fun Application.configureRouting() {
         appFeedbackRoutes()
         reportRoutes()
         exportDataRoutes()
+        linkDeviceRoutes()
 
         static("/static") {
             files("static")

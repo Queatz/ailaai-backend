@@ -131,6 +131,21 @@ fun Db.invite(code: String) = one(
     )
 )
 
+/**
+ * @token The token
+ */
+fun Db.linkDeviceToken(token: String) = one(
+    LinkDeviceToken::class,
+    """
+        for x in @@collection
+            filter x.${f(LinkDeviceToken::token)} == @token
+            return x
+    """.trimIndent(),
+    mapOf(
+        "token" to token
+    )
+)
+
 fun Db.friendsCount(person: String) = query(
     Int::class,
     """
@@ -800,6 +815,7 @@ fun Db.transferOfPerson(person: String) = one(
 /**
  * @code the code of the transfer to fetch
  */
+// todo filter 5 min
 fun Db.transferWithCode(code: String) = one(
     Transfer::class,
     """
