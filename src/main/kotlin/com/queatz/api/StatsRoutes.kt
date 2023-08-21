@@ -5,7 +5,9 @@ import com.queatz.plugins.db
 import com.queatz.plugins.respond
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class AppStats(
     val activePeople30Days: Int,
     val activePeople7Days: Int,

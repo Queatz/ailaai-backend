@@ -236,6 +236,21 @@ data class MessagePushData(
     val message: Message,
 ) : PushDataData()
 
+@Serializable
+data class CollaborationPushData(
+    val person: Person,
+    val card: Card,
+    val event: CollaborationEvent,
+    val data: CollaborationEventData,
+) : PushDataData()
+
+@Serializable
+data class CollaborationEventData (
+    val card: Card? = null,
+    val person: Person? = null,
+    val details: CollaborationEventDataDetails? = null
+)
+
 enum class CollaborationEvent {
     AddedPerson,
     RemovedPerson,
@@ -251,21 +266,6 @@ enum class CollaborationEventDataDetails {
     Name,
     Location,
 }
-
-@Serializable
-data class CollaborationEventData (
-    val card: Card? = null,
-    val person: Person? = null,
-    val details: CollaborationEventDataDetails? = null
-)
-
-@Serializable
-data class CollaborationPushData(
-    val person: Person,
-    val card: Card,
-    val event: CollaborationEvent,
-    val data: CollaborationEventData,
-) : PushDataData()
 
 @Serializable
 data class OAuthResponse(

@@ -7,8 +7,10 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
+@Serializable
 data class WildReplyBody(val message: String, val conversation: String?, val card: String, val device: String)
 
 fun Route.wildRoutes() {

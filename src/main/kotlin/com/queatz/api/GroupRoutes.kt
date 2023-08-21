@@ -12,8 +12,10 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toInstant
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
+@Serializable
 data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
 fun Route.groupRoutes() {
