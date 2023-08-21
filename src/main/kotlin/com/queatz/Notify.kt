@@ -1,11 +1,9 @@
 package com.queatz
 
-import com.queatz.db.Group
-import com.queatz.db.Message
-import com.queatz.db.Person
-import com.queatz.db.memberDevices
+import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.push
+import java.util.logging.Logger
 
 class Notify {
     fun message(group: Group, from: Person, message: Message) {
@@ -18,9 +16,12 @@ class Notify {
             )
         )
 
+        Logger.getAnonymousLogger().info("Sending message push")
+
         db.memberDevices(group.id!!).filter {
             it.member?.from != from.id
         }.apply {
+            Logger.getAnonymousLogger().info("count: $size")
             // Un-hide any groups
             filter { it.member?.hide == true }.forEach {
                 it.member!!.hide = false

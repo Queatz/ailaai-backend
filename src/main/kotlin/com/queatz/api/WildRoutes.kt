@@ -7,6 +7,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import kotlinx.serialization.encodeToString
 
 data class WildReplyBody(val message: String, val conversation: String?, val card: String, val device: String)
 
@@ -46,7 +47,7 @@ fun Route.wildRoutes() {
             group.seen = Clock.System.now()
             db.update(group)
 
-            val attachment = json.toJson(CardAttachment(card.id!!))
+            val attachment = json.encodeToString(CardAttachment(card.id!!))
             // Insert card
             db.insert(Message(group.id, wildMember.id, wildReply.conversation, attachment))
             // Insert reply

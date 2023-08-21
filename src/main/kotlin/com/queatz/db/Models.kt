@@ -1,11 +1,18 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.queatz.db
 
-import com.arangodb.entity.From
-import com.arangodb.entity.Key
-import com.arangodb.entity.To
-import com.google.gson.annotations.SerializedName
+import com.arangodb.serde.jackson.From
+import com.arangodb.serde.jackson.Key
+import com.arangodb.serde.jackson.To
+import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonProperty
 import kotlinx.datetime.Instant
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
+@Serializable
 class Person(
     var name: String? = null,
     var photo: String? = null,
@@ -16,11 +23,13 @@ class Person(
     var source: PersonSource? = null
 ) : Model()
 
+@Serializable
 class Settings(
     var person: String? = null,
     var language: String? = null
 ) : Model()
 
+@Serializable
 class Report(
     var reporter: String? = null,
     var reporterMessage: String? = null,
@@ -29,12 +38,14 @@ class Report(
     var type: ReportType? = null
 ) : Model()
 
+@Serializable
 class Presence(
     var person: String? = null,
     var readStoriesUntil: Instant? = null,
     var unreadStoriesCount: Int? = null
 ) : Model()
 
+@Serializable
 class Profile(
     var person: String? = null,
     var photo: String? = null,
@@ -43,6 +54,7 @@ class Profile(
     var url: String? = null
 ) : Model()
 
+@Serializable
 class Invite(
     var person: String? = null,
     var group: String? = null,
@@ -53,31 +65,37 @@ class Invite(
     var total: Int? = null
 ) : Model()
 
+@Serializable
 class Save(
     var person: String? = null,
     var card: String? = null
 ) : Model()
 
+@Serializable
 class Transfer(
     var person: String? = null,
     var code: String? = null
 ) : Model()
 
+@Serializable
 class LinkDeviceToken(
     var token: String? = null,
     var person: String? = null
 ) : Model()
 
+@Serializable
 class Crash(
     var details: String? = null
 ) : Model()
 
+@Serializable
 class AppFeedback(
     var feedback: String? = null,
     var person: String? = null,
     var type: AppFeedbackType? = null
 ) : Model()
 
+@Serializable
 class Card(
     var person: String? = null,
     var parent: String? = null,
@@ -96,6 +114,7 @@ class Card(
     var cardCount: Int? = null
 ) : Model()
 
+@Serializable
 class Group(
     var name: String? = null,
     var seen: Instant? = null,
@@ -103,15 +122,15 @@ class Group(
     var description: String? = null
 ) : Model()
 
+@Serializable
 class Member(
     var seen: Instant? = null,
     var hide: Boolean? = null,
     var gone: Boolean? = null,
     var host: Boolean? = null,
-    from: String? = null,
-    to: String? = null
-) : Edge(from, to)
+) : Edge()
 
+@Serializable
 class Message(
     var group: String? = null,
     var member: String? = null,
@@ -120,6 +139,7 @@ class Message(
     var attachments: List<String>? = null
 ) : Model()
 
+@Serializable
 class Sticker(
     var photo: String? = null,
     var pack: String? = null,
@@ -127,6 +147,7 @@ class Sticker(
     var message: String? = null
 ) : Model()
 
+@Serializable
 class StickerPack(
     var name: String? = null,
     var description: String? = null,
@@ -135,22 +156,23 @@ class StickerPack(
     var stickers: List<Sticker>? = null
 ) : Model()
 
-class StickerPackSave(
-    from: String? = null,
-    to: String? = null
-) : Edge(from, to)
+@Serializable
+class StickerPackSave : Edge()
 
+@Serializable
 class Device(
     var person: String? = null,
     var type: DeviceType? = null,
     var token: String? = null
 ) : Model()
 
+@Serializable
 class Search(
     var search: String? = null,
     var source: SearchSource? = null
 ) : Model()
 
+@Serializable
 class Story(
     var person: String? = null,
     var title: String? = null,
@@ -162,6 +184,7 @@ class Story(
     var authors: List<Person>? = null
 ) : Model()
 
+@Serializable
 class StoryDraft(
     var story: String? = null,
     var groups: List<String>? = null,
@@ -195,20 +218,28 @@ enum class ReportType {
     Other
 }
 
-open class Model(
+@Serializable
+open class Model {
     @Key
-    @SerializedName(value = "id", alternate = ["_id"])
-    var id: String? = null,
+    @JsonNames("id", "_key")
+    @JsonProperty("_key")
+    @JsonAlias("id")
+    var id: String? = null
 
     var createdAt: Instant? = null
-)
+}
 
-open class Edge(
+@Serializable
+open class Edge : Model() {
     @From
-    @SerializedName(value = "from", alternate = ["_from"])
-    var from: String? = null,
+    @JsonNames("from", "_from")
+    @JsonProperty("_from")
+    @JsonAlias("from")
+    var from: String? = null
 
     @To
-    @SerializedName(value = "to", alternate = ["_to"])
+    @JsonNames("to", "_to")
+    @JsonProperty("_to")
+    @JsonAlias("to")
     var to: String? = null
-) : Model()
+}

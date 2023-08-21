@@ -110,7 +110,7 @@ fun Route.stickerRoutes() {
                 var sticker: Sticker? = null
 
                 call.receiveFile("photo", "sticker-pack-${stickerPack.id}") { photoUrl, params ->
-                    val newSticker = params["sticker"]?.let { json.fromJson(it, Sticker::class.java) }
+                    val newSticker = params["sticker"]?.let { json.decodeFromString<Sticker>(it) }
                     sticker = Sticker(
                         photo = photoUrl,
                         pack = stickerPack.id!!,

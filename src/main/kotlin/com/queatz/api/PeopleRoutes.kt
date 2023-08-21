@@ -10,12 +10,15 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ProfileStats(
     val friendsCount: Int,
     val cardCount: Int
 )
 
+@Serializable
 data class PersonProfile(
     val person: Person,
     val profile: Profile,

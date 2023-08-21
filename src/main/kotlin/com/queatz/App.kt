@@ -20,9 +20,10 @@ class App {
 
     fun createMember(person: String, group: String, host: Boolean? = null) = db.insert(
         Member(
-            from = person.asId(Person::class),
-            to = group.asId(Group::class),
             host = host
-        )
+        ).also {
+            it.from = person.asId(Person::class)
+            it.to = group.asId(Group::class)
+        }
     )
 }

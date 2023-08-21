@@ -1,8 +1,10 @@
 package com.queatz.api
 
-import com.queatz.*
 import com.queatz.db.*
+import com.queatz.parameter
 import com.queatz.plugins.*
+import com.queatz.receiveFile
+import com.queatz.receiveFiles
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -10,6 +12,7 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toInstant
+import kotlinx.serialization.encodeToString
 
 data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
@@ -79,7 +82,7 @@ fun Route.groupRoutes() {
 
         get("/groups/{id}/messages") {
             respond {
-                db.group(me.id!!, parameter("id"))?.let {
+                db.group(me.id!!, parameter("id")).let {
                     db.messages(
                         it.group!!.id!!,
                         call.parameters["before"]?.toInstant(),
@@ -111,7 +114,7 @@ fun Route.groupRoutes() {
                     val group = db.document(Group::class, member.to!!)!!
 
                     updateSeen(me, member, group)
-                    notifyMessage(me, member, group, message)
+                    notifyMessage(me, group, message)
 
                     HttpStatusCode.OK
                 }
@@ -130,17 +133,17 @@ fun Route.groupRoutes() {
                     call.receiveFiles("photo", "group-${group.id}") { photosUrls, params ->
                         val message = db.insert(
                             Message(
-                                member.to?.asKey(), member.id, null, json.toJson(
+                                member.to?.asKey(), member.id, null, json.encodeToString(
                                     PhotosAttachment(
                                         photos = photosUrls
                                     )
                                 ),
-                                attachments = params["message"]?.let { json.fromJson(it, Message::class.java) }?.attachments
+                                attachments = params["message"]?.let { json.decodeFromString<Message>(it,) }?.attachments
                             )
                         )
 
                         updateSeen(person, member, group)
-                        notifyMessage(me, member, group, message)
+                        notifyMessage(me, group, message)
                     }
                 }
             }
@@ -158,17 +161,17 @@ fun Route.groupRoutes() {
                     call.receiveFile("audio", "group-${group.id}") { url, params ->
                         val message = db.insert(
                             Message(
-                                member.to?.asKey(), member.id, null, json.toJson(
+                                member.to?.asKey(), member.id, null, json.encodeToString(
                                     AudioAttachment(
                                         audio = url
                                     )
                                 ),
-                                attachments = params.get("message")?.let { json.fromJson(it, Message::class.java) }?.attachments
+                                attachments = params.get("message")?.let { json.decodeFromString<Message>(it) }?.attachments
                             )
                         )
 
                         updateSeen(person, member, group)
-                        notifyMessage(me, member, group, message)
+                        notifyMessage(me, group, message)
                     }
                 }
             }
@@ -187,30 +190,8 @@ fun GroupExtended.forApi() = also {
     }
 }
 
-private fun notifyMessage(me: Person, member: Member, group: Group, message: Message) {
-    val pushData = PushData(
-        PushAction.Message,
-        MessagePushData(
-            Group().apply { id = group.id },
-            Person(name = me.name).apply { id = me.id },
-            Message(text = message.text?.ellipsize(), attachment = message.attachment)
-        )
-    )
-
-    db.memberDevices(group.id!!).filter {
-        it.member?.id != member.id
-    }.apply {
-        filter { it.member?.hide == true }.forEach {
-            it.member!!.hide = false
-            db.update(it.member!!)
-        }
-
-        forEach {
-            it.devices?.forEach { device ->
-                push.sendPush(device, pushData)
-            }
-        }
-    }
+private fun notifyMessage(me: Person, group: Group, message: Message) {
+    notify.message(group, me, Message(text = message.text?.ellipsize(), attachment = message.attachment))
 }
 
 private fun updateSeen(me: Person, member: Member, group: Group) {

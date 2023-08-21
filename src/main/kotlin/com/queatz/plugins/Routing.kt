@@ -39,13 +39,14 @@ fun Application.configureRouting() {
         reportRoutes()
         exportDataRoutes()
         linkDeviceRoutes()
+        pushRoutes()
 
         static("/static") {
             files("static")
             install(CachingHeaders) {
                 options { _, outgoingContent ->
-                    when (outgoingContent.contentType?.withoutParameters()) {
-                        ContentType.Image.Any -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 60.days.inWholeSeconds.toInt()))
+                    when (outgoingContent.contentType?.contentType) {
+                        ContentType.Image.Any.contentType -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 60.days.inWholeSeconds.toInt()))
                         else -> null
                     }
                 }

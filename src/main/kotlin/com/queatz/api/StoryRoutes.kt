@@ -11,6 +11,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import kotlinx.serialization.encodeToString
 
 fun Route.storyRoutes() {
     authenticate(optional = true) {
@@ -89,7 +90,7 @@ fun Route.storyRoutes() {
                     // Share to groups
                     db.storyDraft(me.id!!, story.id!!)?.groups?.takeIf { it.isNotEmpty() }?.let { groupIds ->
                         val groups = db.groups(me.id!!, groupIds)
-                        val attachment = json.toJson(StoryAttachment(story.id!!))
+                        val attachment = json.encodeToString(StoryAttachment(story.id!!))
                         groups.forEach { group ->
                             db.insert(Message(group.id, me.id, text = null, attachment))
 

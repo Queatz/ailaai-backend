@@ -1,6 +1,7 @@
 package com.queatz.db
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 
 fun Db.recentCrashes(limit: Int = 50) = list(
     Crash::class,
@@ -861,13 +862,9 @@ fun Db.peopleDevices(people: List<String>) = list(
             return device
     """.trimIndent(),
     mapOf(
-        "people" to people.map { it.asId(Person::class).also {
-            println("Notifying person $it")
-        } }
+        "people" to people.map { it.asId(Person::class) }
     )
-).also {
-    println("Notifying ${it.size} device(s)")
-}
+)
 
 /**
  * @person The person in the group
@@ -965,7 +962,7 @@ fun Db.device(type: DeviceType, token: String) = one(
         """
             upsert { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
                 insert { ${f(Device::type)}: @type, ${f(Device::token)}: @token, ${f(Person::createdAt)}: DATE_ISO8601(DATE_NOW()) }
-                update { ${f(Device::type)}: @type, ${f(Device::token)}: @token }
+                update { }
                 in @@collection
                 return NEW || OLD
         """,
@@ -1067,23 +1064,26 @@ fun Db.stickers(stickerPack: String) = list(
     )
 )
 
-
+@Serializable
 class MemberDevice(
     var member: Member? = null,
     var devices: List<Device>? = null
 )
 
+@Serializable
 class GroupExtended(
     var group: Group? = null,
     var members: List<MemberAndPerson>? = null,
     var latestMessage: Message? = null
 )
 
+@Serializable
 class MemberAndPerson(
     var person: Person? = null,
     var member: Member? = null
 )
 
+@Serializable
 class SaveAndCard(
     var save: Person? = null,
     var card: Card? = null

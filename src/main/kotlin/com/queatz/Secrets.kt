@@ -1,17 +1,22 @@
 package com.queatz
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Secrets(
     val jwt: SecretsJwt,
     val hms: SecretsHms,
     val gms: SecretsGms,
 )
 
+@Serializable
 data class SecretsHms(
     val appId: String,
     val clientId: String,
     val clientSecret: String
 )
 
+@Serializable
 data class SecretsGms(
     val appId: String,
     val clientId: String,
@@ -20,6 +25,7 @@ data class SecretsGms(
     val privateKey: String
 )
 
+@Serializable
 data class SecretsJwt(
     val secret: String
 )

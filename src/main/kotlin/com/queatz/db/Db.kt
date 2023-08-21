@@ -3,10 +3,10 @@ package com.queatz.db
 import com.arangodb.*
 import com.arangodb.entity.CollectionType
 import com.arangodb.entity.EdgeDefinition
-import com.arangodb.mapping.ArangoJack
 import com.arangodb.model.CollectionCreateOptions
 import com.arangodb.model.DocumentCreateOptions
 import com.arangodb.model.DocumentUpdateOptions
+import com.arangodb.serde.jackson.JacksonSerde
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -21,10 +21,12 @@ import com.queatz.plugins.json
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import kotlinx.serialization.encodeToString
 import java.io.IOException
 import java.time.format.DateTimeFormatter
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+
 
 class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {
@@ -57,24 +59,25 @@ class InstantModule : SimpleModule() {
 
 class Db {
     private val db = ArangoDB.Builder()
+        .host("127.0.0.1", 8529)
         .user("ailaai")
         .password("ailaai")
-        .serializer(ArangoJack().apply {
+        .serde(JacksonSerde.of(ContentType.JSON).apply {
             configure {
                 it.registerModule(InstantModule())
                 it.registerModule(KotlinModule.Builder().build())
             }
         })
         .build()
-        .db(DbName.of("ailaai"))
+        .db("ailaai")
         .setup()
 
     internal fun <T : Model> one(klass: KClass<T>, query: String, parameters: Map<String, Any?> = mapOf()) =
         synchronized(db) {
             db.query(
                 query,
+                klass.java,
                 if (query.contains("@@collection")) mutableMapOf("@collection" to klass.collection()) + parameters else parameters,
-                klass.java
             )
         }.stream().findFirst().takeIf { it.isPresent }?.get()
 
@@ -82,8 +85,8 @@ class Db {
         synchronized(db) {
             db.query(
                 query,
-                if (query.contains("@@collection")) mutableMapOf("@collection" to klass.collection()) + parameters else parameters,
-                klass.java
+                klass.java,
+                if (query.contains("@@collection")) mutableMapOf("@collection" to klass.collection()) + parameters else parameters
             )
         }.asListRemaining().toList()
 
@@ -91,8 +94,8 @@ class Db {
         synchronized(db) {
             db.query(
                 query,
-                parameters,
-                klass.java
+                klass.java,
+                parameters
             ).asListRemaining()
         }.toList()
 
@@ -175,4 +178,4 @@ fun <T : Model> KClass<T>.collection() = simpleName!!.lowercase()
 fun <T : Edge> KClass<T>.graph() = "${collection()}-graph"
 
 fun Db.f(property: KMutableProperty1<*, *>) = property.name
-inline fun <reified T : Any> Db.v(value: T) = json.toJson(value)
+inline fun <reified T : Any> Db.v(value: T) = json.encodeToString(value)

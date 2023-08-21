@@ -2,10 +2,7 @@ package com.queatz
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.gson.GsonBuilder
-import com.google.gson.annotations.SerializedName
 import com.queatz.db.*
-import com.queatz.plugins.InstantTypeConverter
 import com.queatz.plugins.db
 import com.queatz.plugins.json
 import com.queatz.plugins.secrets
@@ -17,33 +14,33 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.gson.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.util.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import java.security.KeyFactory
 import java.security.interfaces.RSAPrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.*
+import java.util.logging.Logger
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class Push {
 
-    private val gson = GsonBuilder()
-        .registerTypeAdapter(Instant::class.java, InstantTypeConverter())
-        .create()
-
+    private val events = MutableSharedFlow<Pair<PushData, Device>>()
 
     private val http = HttpClient(CIO) {
         install(ContentNegotiation) {
-            gson {
-                registerTypeAdapter(Instant::class.java, InstantTypeConverter())
-            }
+            json(json)
         }
     }
 
@@ -81,7 +78,7 @@ class Push {
                             }))
                         }
 
-                        println(response.toString())
+                        Logger.getAnonymousLogger().info(response.toString())
 
                         if (response.status.isSuccess()) {
                             response.body<OAuthResponse>().let {
@@ -122,7 +119,7 @@ class Push {
                             }))
                         }
 
-                        println(response.toString())
+                        Logger.getAnonymousLogger().info(response.toString())
 
                         if (response.status.isSuccess()) {
                             response.body<OAuthResponse>().let {
@@ -148,9 +145,13 @@ class Push {
         }
     }
 
+    fun flow(device: String) = events
+        .filter { it.second.id == device }
+        .map { it.first }
+
     private suspend fun doSendPush(device: Device, pushData: PushData) {
-        println("Sending push to ${json.toJson(device)}:")
-        println(json.toJson(pushData))
+        Logger.getAnonymousLogger().info("Sending push to ${json.encodeToString(device)}:")
+        Logger.getAnonymousLogger().info(json.encodeToString(pushData))
         when (device.type!!) {
             DeviceType.Hms -> {
                 try {
@@ -160,13 +161,13 @@ class Push {
                         setBody(
                             HmsPushBody(
                                 HmsPushBodyMessage(
-                                    data = gson.toJson(pushData),
+                                    data = json.encodeToString(pushData),
                                     token = listOf(device.token!!)
                                 )
                             )
                         )
                     }
-                    println(response.bodyAsText())
+                    Logger.getAnonymousLogger().info(response.bodyAsText())
                 } catch (throwable: Throwable) {
                     throwable.printStackTrace()
                 }
@@ -182,7 +183,13 @@ class Push {
                                 GmsPushBodyMessage(
                                     data = mapOf(
                                         "action" to pushData.action!!.name,
-                                        "data" to gson.toJson(pushData.data)
+                                        "data" to json.encodeToString(
+                                            when (val it = pushData.data) {
+                                                is CollaborationPushData -> it as CollaborationPushData
+                                                is MessagePushData -> it as MessagePushData
+                                                else -> error("Unknown push data type")
+                                            }
+                                        )
                                     ),
                                     token = device.token!!
                                 )
@@ -192,13 +199,13 @@ class Push {
                     if (response.status == HttpStatusCode.NotFound) {
                         onDeviceUnregistered(device)
                     }
-                    println("FCM response: ${response.status} ${response.bodyAsText()}")
+                    Logger.getAnonymousLogger().info("FCM response: ${response.status} ${response.bodyAsText()}")
                 } catch (throwable: Throwable) {
                     throwable.printStackTrace()
                 }
             }
-            else -> {
-                println("Push notifications for $device are not supported")
+            DeviceType.Web -> {
+                events.emit(pushData to device)
             }
         }
     }
@@ -213,16 +220,21 @@ enum class PushAction {
     Collaboration
 }
 
+@Serializable
 data class PushData(
     val action: PushAction? = null,
-    val data: Any? = null,
+    val data: PushDataData? = null,
 )
 
+@Serializable
+sealed class PushDataData
+
+@Serializable
 data class MessagePushData(
     val group: Group,
     val person: Person,
     val message: Message,
-)
+) : PushDataData()
 
 enum class CollaborationEvent {
     AddedPerson,
@@ -240,38 +252,45 @@ enum class CollaborationEventDataDetails {
     Location,
 }
 
+@Serializable
 data class CollaborationEventData (
     val card: Card? = null,
     val person: Person? = null,
     val details: CollaborationEventDataDetails? = null
 )
 
+@Serializable
 data class CollaborationPushData(
     val person: Person,
     val card: Card,
     val event: CollaborationEvent,
     val data: CollaborationEventData,
-)
+) : PushDataData()
 
+@Serializable
 data class OAuthResponse(
     val access_token: String? = null,
     val expires_in: Long? = null,
 )
 
+@Serializable
 data class HmsPushBody(
-    @SerializedName("message") var message: HmsPushBodyMessage? = HmsPushBodyMessage(),
+    var message: HmsPushBodyMessage? = HmsPushBodyMessage(),
 )
 
+@Serializable
 data class HmsPushBodyMessage(
-    @SerializedName("data") var data: String? = null,
-    @SerializedName("token") var token: List<String>? = null,
+    var data: String? = null,
+    var token: List<String>? = null,
 )
 
+@Serializable
 data class GmsPushBody(
-    @SerializedName("message") var message: GmsPushBodyMessage? = GmsPushBodyMessage(),
+    var message: GmsPushBodyMessage? = GmsPushBodyMessage(),
 )
 
+@Serializable
 data class GmsPushBodyMessage(
-    @SerializedName("data") var data: Map<String, String>? = null,
-    @SerializedName("token") var token: String? = null,
+    var data: Map<String, String>? = null,
+    var token: String? = null,
 )
