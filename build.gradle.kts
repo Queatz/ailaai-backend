@@ -23,8 +23,20 @@ repositories {
     mavenCentral()
     //maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
+val osName = System.getProperty("os.name").toLowerCase()
+val tcnative_classifier = when {
+    osName.contains("win") -> "windows-x86_64"
+    osName.contains("linux") -> ""
+    osName.contains("mac") -> "osx-x86_64"
+    else -> null
+}
 
 dependencies {
+    if (tcnative_classifier != null) {
+        implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final:linux-x86_64")
+    } else {
+        implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final")
+    }
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.5.1")

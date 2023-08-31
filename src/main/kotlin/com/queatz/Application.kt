@@ -9,7 +9,17 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 
 fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)
+    embeddedServer(
+        Netty,
+        port = 8080,
+        host = "0.0.0.0",
+        module = Application::module,
+        configure = {
+            requestQueueLimit = 1024
+            runningLimit = 1024
+            responseWriteTimeoutSeconds = 60
+        }
+    ).start(wait = true)
 }
 
 

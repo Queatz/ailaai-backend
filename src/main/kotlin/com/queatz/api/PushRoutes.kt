@@ -12,28 +12,43 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
-import java.util.logging.Logger
+import kotlin.time.Duration.Companion.seconds
+
+private sealed class SseEvent {
+    object Heartbeat : SseEvent()
+    class Push(val data: PushData) : SseEvent()
+}
 
 private suspend fun ApplicationCall.respondSse(events: Flow<PushData>) {
     response.cacheControl(CacheControl.NoCache(null))
     response.header("X-Accel-Buffering", "no")
     respondBytesWriter(contentType = ContentType.Text.EventStream) {
-        Logger.getAnonymousLogger().info("Collecting events for web")
-        events.collect { event ->
-            Logger.getAnonymousLogger().info("Sending to web: ${event.data}")
-//            if (event.id != null) {
-//                writeStringUtf8("id: ${event.id}\n")
-//            }
-//            if (event.event != null) {
-//                writeStringUtf8("event: ${event.event}\n")
-//            }
-            for (dataLine in json.encodeToString(event).lines()) {
-                writeStringUtf8("data: $dataLine\n")
+        merge<SseEvent>(
+            events.map { SseEvent.Push(it) },
+            flow {
+                while (true) {
+                    delay(30.seconds)
+                    emit(SseEvent.Heartbeat)
+                }
             }
-            writeStringUtf8("\n")
-            flush()
+        ).collect { event ->
+            when (event) {
+                is SseEvent.Push -> {
+                    for (dataLine in json.encodeToString(event.data).lines()) {
+                        writeStringUtf8("data: $dataLine\n")
+                    }
+                    writeStringUtf8("\n")
+                    flush()
+                }
+                is SseEvent.Heartbeat -> {
+                    writeStringUtf8("event: heartbeat\n")
+                    writeStringUtf8("\n")
+                    flush()
+                }
+            }
         }
     }
 }

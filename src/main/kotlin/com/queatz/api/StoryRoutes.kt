@@ -34,7 +34,7 @@ fun Route.storyRoutes() {
     authenticate {
         get("/stories") {
             respond {
-                val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
+                val geo = call.parameters["geo"]?.split(",")?.map { it.toDouble() } ?: emptyList()
 
                 if (geo.size != 2) {
                     return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
@@ -92,7 +92,8 @@ fun Route.storyRoutes() {
                         val groups = db.groups(me.id!!, groupIds)
                         val attachment = json.encodeToString(StoryAttachment(story.id!!))
                         groups.forEach { group ->
-                            db.insert(Message(group.id, me.id, text = null, attachment))
+                            val myMember = db.member(group.id!!, me.id!!) ?: return@forEach
+                            db.insert(Message(group.id, myMember.id, text = null, attachment))
 
                             notify.message(
                                 group = group,
