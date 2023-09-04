@@ -49,12 +49,12 @@ fun Route.groupRoutes() {
         get("/groups/{id}") {
             respond {
                 val person = me
-                db.group(me.id!!, parameter("id"))?.also { group ->
+                db.group(me.id!!, parameter("id")).also { group ->
                     group.members?.find { it.person?.id == person.id }?.member?.let { member ->
                         member.seen = Clock.System.now()
                         db.update(member)
                     }
-                }?.forApi() ?: HttpStatusCode.NotFound
+                }.forApi()
             }
         }
 

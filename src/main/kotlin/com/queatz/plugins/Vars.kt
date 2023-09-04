@@ -1,9 +1,6 @@
 package com.queatz.plugins
 
-import com.queatz.App
-import com.queatz.Notify
-import com.queatz.Push
-import com.queatz.Secrets
+import com.queatz.*
 import com.queatz.db.Db
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -27,5 +24,6 @@ val db = Db()
 val push = Push()
 val app = App()
 val notify = Notify()
+val ai = Ai()
 
 const val defaultNearbyMaxDistanceKm = 100_000.0

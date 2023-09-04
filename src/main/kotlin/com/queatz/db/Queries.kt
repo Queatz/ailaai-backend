@@ -1085,6 +1085,6 @@ class MemberAndPerson(
 
 @Serializable
 class SaveAndCard(
-    var save: Person? = null,
+    var save: Save? = null,
     var card: Card? = null
 )

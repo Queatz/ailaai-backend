@@ -8,6 +8,8 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlin.reflect.KMutableProperty1
 
 fun Route.cardRoutes() {
@@ -53,10 +55,12 @@ fun Route.cardRoutes() {
                 val search = call.parameters["search"]
                     ?.takeIf { it.isNotBlank() }
                     ?.also { search ->
-                        db.insert(Search(
-                            search = search,
-                            source = if (person == null) SearchSource.Web else null
-                        ))
+                        db.insert(
+                            Search(
+                                search = search,
+                                source = if (person == null) SearchSource.Web else null
+                            )
+                        )
                     }
 
                 db.explore(
@@ -210,7 +214,9 @@ fun Route.cardRoutes() {
                         val collaborators = card.collaborators ?: emptyList()
 
                         // Add current owner as collaborator if they have inner cards
-                        if (person.id !in collaborators && db.allCardsOfCard(card.id!!).any { it.person == person.id }) {
+                        if (person.id !in collaborators && db.allCardsOfCard(card.id!!)
+                                .any { it.person == person.id }
+                        ) {
                             card.collaborators = collaborators + person.id!!
                         }
 
@@ -223,7 +229,8 @@ fun Route.cardRoutes() {
 
                     // Remove any cards of added collaborators
                     if (update.collaborators != null) {
-                        val removedCollaborators = (card.collaborators ?: emptyList()).toSet() - update.collaborators!!.toSet()
+                        val removedCollaborators =
+                            (card.collaborators ?: emptyList()).toSet() - update.collaborators!!.toSet()
                         removedCollaborators.forEach { removedPerson ->
                             notifyCollaboratorRemoved(person, card.people(), card, removedPerson)
                         }
@@ -237,7 +244,8 @@ fun Route.cardRoutes() {
                                 }
                             }
                         }
-                        val addedCollaborators = update.collaborators!!.toSet() - (card.collaborators ?: emptyList()).toSet()
+                        val addedCollaborators =
+                            update.collaborators!!.toSet() - (card.collaborators ?: emptyList()).toSet()
                         addedCollaborators.forEach { addedPerson ->
                             notifyCollaboratorAdded(person, card.people() + addedCollaborators, card, addedPerson)
                         }
@@ -263,19 +271,49 @@ fun Route.cardRoutes() {
                         } else if (card.active == true) {
                             // todo also notify changes to the actual card, not just the parent
                             if (update.name != null && update.name != card.name) {
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Name)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Name
+                                )
                             }
                             if (update.photo != null && update.photo != card.photo) {
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Photo)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Photo
+                                )
                             }
                             if (update.video != null && update.video != card.video) {
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Video)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Video
+                                )
                             }
                             if (update.conversation != null && update.conversation != card.conversation) {
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Conversation)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Conversation
+                                )
                             }
                             if (update.location != null && update.location != card.location) {
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Location)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Location
+                                )
                             }
                         }
                     }
@@ -365,11 +403,79 @@ fun Route.cardRoutes() {
 
                         if (card.active == true) {
                             card.parent?.let { db.document(Card::class, it) }?.let { parentCard ->
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Photo)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Photo
+                                )
                             }
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
                         }
                     }
+                }
+            }
+        }
+
+        post("/cards/{id}/photo/generate") {
+            respond {
+                val card = db.document(Card::class, parameter("id"))
+                val person = me
+
+                if (card == null) {
+                    HttpStatusCode.NotFound
+                } else if (card.person!!.asKey() != person.id) {
+                    HttpStatusCode.Forbidden
+                } else {
+                    if (card.name.isNullOrBlank()) {
+                        return@respond HttpStatusCode.BadRequest.description("Missing card name")
+                    }
+
+                    launch {
+                        val url = ai.photo(
+                            "card-${card.id!!}",
+                            buildList {
+                                add(
+                                    StabilityTextPrompt(
+                                        card.name!!
+                                    )
+                                )
+
+                                if (!card.location.isNullOrBlank()) {
+                                    add(
+                                        StabilityTextPrompt(card.location!!, .5)
+                                    )
+                                }
+
+                                val message = card.getConversation().message
+
+                                if (message.isNotBlank()) {
+                                    add(
+                                        StabilityTextPrompt(message, .25)
+                                    )
+                                }
+                            }
+                        )
+
+                        card.photo = url
+                        db.update(card)
+
+                        if (card.active == true) {
+                            card.parent?.let { db.document(Card::class, it) }?.let { parentCard ->
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Photo
+                                )
+                            }
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Photo)
+                        }
+                    }
+
+                    HttpStatusCode.OK
                 }
             }
         }
@@ -390,7 +496,13 @@ fun Route.cardRoutes() {
 
                         if (card.active == true) {
                             card.parent?.let { db.document(Card::class, it) }?.let { parentCard ->
-                                notifyCardInCardUpdated(person, parentCard.people(), parentCard, card, CollaborationEventDataDetails.Video)
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Video
+                                )
                             }
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Video)
                         }
@@ -483,7 +595,13 @@ suspend fun notifyCardUpdated(me: Person, people: Set<String>, card: Card, detai
     )
 }
 
-suspend fun notifyCardInCardUpdated(me: Person, people: Set<String>, card: Card, updatedCard: Card, details: CollaborationEventDataDetails) {
+suspend fun notifyCardInCardUpdated(
+    me: Person,
+    people: Set<String>,
+    card: Card,
+    updatedCard: Card,
+    details: CollaborationEventDataDetails
+) {
     notifyCollaborators(
         me,
         people,
@@ -599,3 +717,23 @@ fun Card.people() = (collaborators ?: emptyList()).toSet() + person!!
 fun Card.isActiveOrMine(me: Person?) = (me != null && isMineOrIAmCollaborator(me)) || active == true
 
 fun Card.isMineOrIAmCollaborator(me: Person) = person!!.asKey() == me.id!! || collaborators?.contains(me.id!!) == true
+
+fun Card.getConversation() = json.decodeFromString<ConversationItem>(conversation ?: "{}")
+
+@Serializable
+data class ConversationItem(
+    var title: String = "",
+    var message: String = "",
+    var action: ConversationAction? = null,
+    var items: MutableList<ConversationItem> = mutableListOf(),
+)
+
+@Serializable
+data class CardOptions(
+    var enableReplies: Boolean? = null,
+    var enableAnonymousReplies: Boolean? = null
+)
+
+enum class ConversationAction {
+    Message
+}
