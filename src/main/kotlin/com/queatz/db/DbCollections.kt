@@ -9,6 +9,24 @@ fun collections() = listOf(
     Person::class.db {
         ensurePersistentIndex(listOf(Person::name.name), PersistentIndexOptions())
     },
+    Reminder::class.db {
+        ensurePersistentIndex(listOf(Reminder::person.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::groups.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::attachment.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::title.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::note.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::start.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::end.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Reminder::schedule.name), PersistentIndexOptions())
+    },
+    ReminderOccurrence::class.db {
+        ensurePersistentIndex(listOf(ReminderOccurrence::reminder.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(ReminderOccurrence::occurrence.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(ReminderOccurrence::date.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(ReminderOccurrence::note.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(ReminderOccurrence::done.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(ReminderOccurrence::gone.name), PersistentIndexOptions())
+    },
     Transfer::class.db {
         ensurePersistentIndex(listOf(Transfer::person.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Transfer::code.name), PersistentIndexOptions())

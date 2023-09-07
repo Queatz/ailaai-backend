@@ -442,17 +442,17 @@ fun Route.cardRoutes() {
                                     )
                                 )
 
-                                if (!card.location.isNullOrBlank()) {
-                                    add(
-                                        StabilityTextPrompt(card.location!!, .5)
-                                    )
-                                }
-
                                 val message = card.getConversation().message
 
                                 if (message.isNotBlank()) {
                                     add(
-                                        StabilityTextPrompt(message, .25)
+                                        StabilityTextPrompt(message, .5)
+                                    )
+                                }
+
+                                if (!card.location.isNullOrBlank()) {
+                                    add(
+                                        StabilityTextPrompt(card.location!!, .25)
                                     )
                                 }
                             }

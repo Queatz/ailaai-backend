@@ -27,7 +27,6 @@ import java.time.format.DateTimeFormatter
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 
-
 class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {
         val value = jsonParser.codec.readValue(jsonParser, String::class.java)

@@ -27,6 +27,7 @@ fun Application.configureRouting() {
         cardRoutes()
         groupRoutes()
         peopleRoutes()
+        reminderRoutes()
         memberRoutes()
         messageRoutes()
         wildRoutes()

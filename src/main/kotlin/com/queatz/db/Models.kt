@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonProperty
 import kotlinx.datetime.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 
@@ -190,6 +191,57 @@ class StoryDraft(
     var groups: List<String>? = null,
     var groupDetails: List<Group>? = null
 ) : Model()
+
+@Serializable
+class Reminder(
+    var person: String? = null,
+    var groups: List<String>? = null,
+    var attachment: String? = null,
+    var title: String? = null,
+    var note: String? = null,
+    var start: Instant? = null,
+    var end: Instant? = null,
+    var schedule: ReminderSchedule? = null
+) : Model()
+
+@Serializable
+class ReminderOccurrence(
+    var reminder: String? = null,
+    var occurrence: Instant? = null,
+    var date: Instant? = null,
+    var note: String? = null,
+    var done: String? = null,
+    var gone: Boolean? = null,
+) : Model()
+
+@Serializable
+class ReminderSchedule(
+    /**
+     * 0 - 23 = hour of day
+     */
+    val hours: List<Int>? = null,
+    /**
+     * 1 - 31 = day of month
+     * -1 - -31 = last days of month
+     */
+    val days: List<Int>? = null,
+    /**
+     * 1 - 7 = day of week
+     */
+    val weekdays: List<Int>? = null,
+    /**
+     * 1 - 5 = week of month
+     */
+    val weeks: List<Int>? = null,
+    /**
+     * 1 - 12 = month of year
+     */
+    val months: List<Int>? = null,
+    /**
+     * year
+     */
+    val years: List<Int>? = null,
+)
 
 enum class DeviceType {
     Hms,

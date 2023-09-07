@@ -90,7 +90,7 @@ fun Route.groupRoutes() {
                         call.parameters["before"]?.toInstant(),
                         call.parameters["limit"]?.toInt() ?: 20
                     )
-                } ?: HttpStatusCode.NotFound
+                }
             }
         }
 

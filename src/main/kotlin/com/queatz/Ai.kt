@@ -24,11 +24,19 @@ class Ai {
         private const val endpoint =
             "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
         private val apiKey = secrets.stability.key
-        private val defaultStylePreset = "anime"//"cinematic"//null//"anime"//"fantasy-art"
+        private val defaultStylePresets = listOf(
+            null,
+            "anime",
+            "fantasy-art"
+        )
         private const val cfgScale = 20
         private const val height = 832
         private const val width = 1216
         private const val steps = 40
+        private val basePrompt = StabilityTextPrompt(
+            "love, beauty, cute, happy, sweet, natural",
+            .125
+        )
     }
 
     private val http = HttpClient(CIO) {
@@ -41,8 +49,8 @@ class Ai {
     suspend fun photo(prefix: String, prompts: List<StabilityTextPrompt>): String {
         val body = json.encodeToString(
             StabilityPrompt(
-                prompts = prompts,
-                style = defaultStylePreset,
+                prompts = prompts + basePrompt,
+                style = defaultStylePresets.random(),
                 cfgScale = cfgScale,
                 height = height,
                 width = width,
