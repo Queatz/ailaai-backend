@@ -7,8 +7,12 @@ import com.queatz.plugins.configureSerialization
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import java.util.*
 
 fun main() {
+    System.setProperty("user.timezone", "UTC")
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+
     embeddedServer(
         Netty,
         port = 8080,
@@ -29,4 +33,3 @@ fun Application.module() {
     configureSecurity()
     configureRouting()
 }
-

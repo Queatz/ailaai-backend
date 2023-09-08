@@ -25,7 +25,7 @@ import kotlinx.serialization.encodeToString
 import java.io.IOException
 import java.time.format.DateTimeFormatter
 import kotlin.reflect.KClass
-import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.KProperty1
 
 class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {
@@ -176,5 +176,5 @@ internal fun <T : Model> String.asId(klass: KClass<T>) = if (this.contains("/"))
 fun <T : Model> KClass<T>.collection() = simpleName!!.lowercase()
 fun <T : Edge> KClass<T>.graph() = "${collection()}-graph"
 
-fun Db.f(property: KMutableProperty1<*, *>) = property.name
+fun Db.f(property: KProperty1<*, *>) = property.name
 inline fun <reified T : Any> Db.v(value: T) = json.encodeToString(value)

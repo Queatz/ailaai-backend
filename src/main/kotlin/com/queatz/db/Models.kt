@@ -201,6 +201,8 @@ class Reminder(
     var note: String? = null,
     var start: Instant? = null,
     var end: Instant? = null,
+    var timezone: String? = null,
+    var utcOffset: Double? = null,
     var schedule: ReminderSchedule? = null
 ) : Model()
 
@@ -218,27 +220,39 @@ class ReminderOccurrence(
 class ReminderSchedule(
     /**
      * 0 - 23 = hour of day
+     *
+     * Described in reminder's local time.
      */
     val hours: List<Int>? = null,
     /**
      * 1 - 31 = day of month
      * -1 - -31 = last days of month
+     *
+     * Described in reminder's local time.
      */
     val days: List<Int>? = null,
     /**
      * 1 - 7 = day of week
+     *
+     * Described in reminder's local time.
      */
     val weekdays: List<Int>? = null,
     /**
      * 1 - 5 = week of month
+     *
+     * Described in reminder's local time.
      */
     val weeks: List<Int>? = null,
     /**
      * 1 - 12 = month of year
+     *
+     * Described in reminder's local time.
      */
     val months: List<Int>? = null,
     /**
      * year
+     *
+     * Described in reminder's local time.
      */
     val years: List<Int>? = null,
 )

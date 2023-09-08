@@ -22,11 +22,10 @@ fun Route.reminderRoutes() {
 
         get("/occurrences") {
             respond {
-                val from = call.parameters["from"]?.toInstant() ?: return@respond HttpStatusCode.BadRequest.description("Missing 'from' parameter")
-                val to = call.parameters["to"]?.toInstant() ?: return@respond HttpStatusCode.BadRequest.description("Missing 'to' parameter")
+                val start = call.parameters["start"]?.toInstant() ?: return@respond HttpStatusCode.BadRequest.description("Missing 'start' parameter")
+                val end = call.parameters["end"]?.toInstant() ?: return@respond HttpStatusCode.BadRequest.description("Missing 'end' parameter")
 
-                // todo calc all reminders and add any occurrences.date
-                emptyList<ReminderOccurrence>()
+                db.occurrences(me.id!!, start, end)
             }
         }
 
@@ -45,6 +44,8 @@ fun Route.reminderRoutes() {
                         note = new.note,
                         start = new.start,
                         end = new.end,
+                        timezone = new.timezone,
+                        utcOffset = new.utcOffset ?: 0.0,
                         schedule = new.schedule
                     )
                 )
@@ -92,12 +93,20 @@ fun Route.reminderRoutes() {
                         reminder.start = update.start
                     }
 
-                    // TODO can be deleted
+                    if (update.timezone != null) {
+                        reminder.timezone = update.timezone
+                    }
+
+                    if (update.utcOffset != null) {
+                        reminder.utcOffset = update.utcOffset
+                    }
+
+                    // TODO need a way for the user to delete
                     if (update.end != null) {
                         reminder.end = update.end
                     }
 
-                    // TODO can be deleted
+                    // TODO need a way for the user to delete
                     if (update.schedule != null) {
                         reminder.schedule = update.schedule
                     }
