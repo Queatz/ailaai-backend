@@ -31,7 +31,7 @@ fun Db.occurrences(person: String, start: Instant, end: Instant) = query(
         for reminder in ${Reminder::class.collection()}
             filter reminder.${f(Reminder::person)} == @person
                 and reminder.${f(Reminder::start)} <= @end
-                and (reminder.${f(Reminder::end)} == null || reminder.${f(Reminder::end)} >= @start)
+                and (reminder.${f(Reminder::end)} == null or reminder.${f(Reminder::end)} >= @start)
             let utcOffset = reminder.${f(Reminder::utcOffset)} || 0.0
             let reminderMinute = date_minute(date_add(reminder.${f(Reminder::start)}, utcOffset, 'h'))
             let dates = reminder.${f(Reminder::schedule)} == null ? [] : (
@@ -89,10 +89,13 @@ fun Db.occurrences(person: String, start: Instant, end: Instant) = query(
                             reminderMinute,
                             'minute'
                         )
-                        filter occurrenceDate <= @end and occurrenceDate >= @start
+                        // See https://github.com/arangodb/arangodb/issues/19747
+                        filter occurrenceDate <= date_iso8601(@end) and occurrenceDate >= date_iso8601(@start)
                             and (
-                                occurrenceDate >= reminder.${f(Reminder::start)}
-                                and (reminder.${f(Reminder::end)} == null || occurrenceDate <= reminder.${f(Reminder::end)})
+                                // See https://github.com/arangodb/arangodb/issues/19747
+                                occurrenceDate >= date_iso8601(reminder.${f(Reminder::start)})
+                                // See https://github.com/arangodb/arangodb/issues/19747
+                                and (reminder.${f(Reminder::end)} == null or occurrenceDate <= date_iso8601(reminder.${f(Reminder::end)}))
                             )
                         return occurrenceDate
             )
@@ -106,7 +109,7 @@ fun Db.occurrences(person: String, start: Instant, end: Instant) = query(
                     return occurrence
             )
             return {
-                reminder,
+                reminder: merge(reminder, { groups: [@start, @end] }),
                 dates,
                 occurrences
             }

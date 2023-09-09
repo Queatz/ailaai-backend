@@ -23,9 +23,15 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.encodeToString
 import java.io.IOException
-import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
+
+val instantFormatter = DateTimeFormatterBuilder()
+    .parseCaseInsensitive()
+    .appendInstant(3)
+    .parseStrict()
+    .toFormatter()
 
 class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {
@@ -38,7 +44,7 @@ class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
 class InstantSerializer : StdSerializer<Instant>(Instant::class.java) {
     @Throws(IOException::class)
     override fun serialize(value: Instant, jsonGenerator: JsonGenerator, serializerProvider: SerializerProvider) {
-        jsonGenerator.writeString(DateTimeFormatter.ISO_INSTANT.format(value.toJavaInstant()))
+        jsonGenerator.writeString(instantFormatter.format(value.toJavaInstant()))
     }
 }
 
