@@ -15,6 +15,7 @@ fun Db.reminders(person: String) = list(
     """
         for x in @@collection
             filter x.${f(Reminder::person)} == @person
+            sort x.${f(Reminder::createdAt)} desc
             return x
     """.trimIndent(),
     mapOf(
@@ -146,43 +147,26 @@ fun Db.deleteReminderOccurrences(reminder: String) = query(
 fun Db.upsertReminderOccurrenceGone(reminder: String, occurrence: Instant, gone: Boolean) = query(
     ReminderOccurrence::class,
     """
-        upsert { ${f(ReminderOccurrence::reminder)}: @reminder }
-        insert {
-            ${f(ReminderOccurrence::occurrence)}: @occurrence,
-            ${f(ReminderOccurrence::gone)}: true,
-            ${f(ReminderOccurrence::createdAt)}: DATE_ISO8601(DATE_NOW())
+        upsert {
+            ${f(ReminderOccurrence::reminder)}: @reminder,
+            ${f(ReminderOccurrence::occurrence)}: @occurrence
         }
-        update {
-            ${f(ReminderOccurrence::gone)}: @gone
-        }
-        in ${ReminderOccurrence::class.collection()}
-        return NEW
+            insert {
+                ${f(ReminderOccurrence::reminder)}: @reminder,
+                ${f(ReminderOccurrence::occurrence)}: @occurrence,
+                ${f(ReminderOccurrence::date)}: @occurrence,
+                ${f(ReminderOccurrence::gone)}: @gone,
+                ${f(ReminderOccurrence::createdAt)}: DATE_ISO8601(DATE_NOW())
+            }
+            update {
+                ${f(ReminderOccurrence::gone)}: @gone
+            }
+            in ${ReminderOccurrence::class.collection()}
+            return NEW || OLD
     """.trimIndent(),
     mapOf(
         "reminder" to reminder,
         "occurrence" to occurrence,
         "gone" to gone
-    )
-)
-
-fun Db.upsertReminderOccurrenceDone(reminder: String, occurrence: Instant, done: Boolean) = query(
-    ReminderOccurrence::class,
-    """
-        upsert { ${f(ReminderOccurrence::reminder)}: @reminder }
-        insert {
-            ${f(ReminderOccurrence::occurrence)}: @occurrence,
-            ${f(ReminderOccurrence::gone)}: true,
-            ${f(ReminderOccurrence::createdAt)}: DATE_ISO8601(DATE_NOW())
-        }
-        update {
-            ${f(ReminderOccurrence::gone)}: true
-        }
-        in @@collection
-        return NEW
-    """.trimIndent(),
-    mapOf(
-        "reminder" to reminder,
-        "occurrence" to occurrence,
-        "done" to done
     )
 )

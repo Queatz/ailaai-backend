@@ -130,7 +130,8 @@ fun Route.reminderRoutes() {
                 val at = parameter("occurrence").toInstant()
                 val occurrence = db.occurrence(reminder.id!!, at) ?: ReminderOccurrence(
                     reminder = reminder.id!!,
-                    occurrence = at
+                    occurrence = at,
+                    date = at
                 ).let(db::insert)
 
                 val occurrenceUpdate = call.receive<ReminderOccurrence>()
