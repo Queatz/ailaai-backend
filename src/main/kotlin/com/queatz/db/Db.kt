@@ -31,7 +31,7 @@ val instantFormatter = DateTimeFormatterBuilder()
     .parseCaseInsensitive()
     .appendInstant(3)
     .parseStrict()
-    .toFormatter()
+    .toFormatter()!!
 
 class InstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
     override fun deserialize(jsonParser: JsonParser, obj: DeserializationContext): Instant {

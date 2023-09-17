@@ -10,16 +10,19 @@ class ReminderOccurrences(
     val occurrences: List<ReminderOccurrence>,
 )
 
-fun Db.reminders(person: String) = list(
+fun Db.reminders(person: String, offset: Int = 0, limit: Int = 50) = list(
     Reminder::class,
     """
         for x in @@collection
             filter x.${f(Reminder::person)} == @person
             sort x.${f(Reminder::createdAt)} desc
+            limit @offset, @limit
             return x
     """.trimIndent(),
     mapOf(
-        "person" to person
+        "person" to person,
+        "offset" to offset,
+        "limit" to limit
     )
 )
 
