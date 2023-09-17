@@ -23,10 +23,10 @@ class AudioAttachment(
 }
 
 @Serializable
-class VideoAttachment(
-    var video: String? = null
+class VideosAttachment(
+    var videos: List<String>? = null
 ) : MessageAttachment() {
-    override val type = "video"
+    override val type = "videos"
 }
 
 @Serializable

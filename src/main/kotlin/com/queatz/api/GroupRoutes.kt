@@ -135,12 +135,46 @@ fun Route.groupRoutes() {
                     call.receiveFiles("photo", "group-${group.id}") { photosUrls, params ->
                         val message = db.insert(
                             Message(
-                                member.to?.asKey(), member.id, null, json.encodeToString(
+                                member.to?.asKey(),
+                                member.id,
+                                null,
+                                json.encodeToString(
                                     PhotosAttachment(
                                         photos = photosUrls
                                     )
                                 ),
-                                attachments = params["message"]?.let { json.decodeFromString<Message>(it,) }?.attachments
+                                attachments = params["message"]?.let { json.decodeFromString<Message>(it) }?.attachments
+                            )
+                        )
+
+                        updateSeen(person, member, group)
+                        notifyMessage(me, group, message)
+                    }
+                }
+            }
+        }
+
+        post("/groups/{id}/videos") {
+            respond {
+                val person = me
+                val member = db.member(person.id!!, parameter("id"))
+
+                if (member == null) {
+                    HttpStatusCode.NotFound
+                } else {
+                    val group = db.document(Group::class, member.to!!)!!
+                    call.receiveFiles("photo", "group-${group.id}") { urls, params ->
+                        val message = db.insert(
+                            Message(
+                                member.to?.asKey(),
+                                member.id,
+                                null,
+                                json.encodeToString(
+                                    VideosAttachment(
+                                        videos = urls
+                                    )
+                                ),
+                                attachments = params["message"]?.let { json.decodeFromString<Message>(it) }?.attachments
                             )
                         )
 
