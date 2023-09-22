@@ -7,7 +7,7 @@ data class Secrets(
     val jwt: SecretsJwt,
     val hms: SecretsHms,
     val gms: SecretsGms,
-    val stability: SecretsStability,
+    val dezgo: SecretsDezgo,
 )
 
 @Serializable
@@ -32,6 +32,6 @@ data class SecretsJwt(
 )
 
 @Serializable
-data class SecretsStability(
+data class SecretsDezgo(
     val key: String
 )

@@ -21,22 +21,20 @@ import kotlin.time.Duration.Companion.minutes
 class Ai {
 
     companion object {
-        private const val endpoint =
-            "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
-        private val apiKey = secrets.stability.key
+        private const val endpoint = "https://api.dezgo.com/text2image"
         private val defaultStylePresets = listOf(
-            null,
-            "anime",
-            "fantasy-art"
+            "absolute_reality_1_8_1",
+            "anything_5_0",
+            "openniji",
+            "pastel_mix"
         )
-        private const val cfgScale = 20
-        private const val height = 832
-        private const val width = 1216
-        private const val steps = 40
-        private val basePrompt = StabilityTextPrompt(
-            "love, beauty, cute, happy, sweet, natural",
+        private const val height = 416
+        private const val width = 608
+        private val basePrompt = TextPrompt(
+            "lovely, beautiful, cute, happy, sweet, natural",
             .125
         )
+        private val negativePrompt = "ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurry, bad anatomy, blurred, watermark, grainy, signature, cut off, draft"
     }
 
     private val http = HttpClient(CIO) {
@@ -46,22 +44,21 @@ class Ai {
         }
     }
 
-    suspend fun photo(prefix: String, prompts: List<StabilityTextPrompt>): String {
+    suspend fun photo(prefix: String, prompts: List<TextPrompt>): String {
         val body = json.encodeToString(
-            StabilityPrompt(
-                prompts = prompts + basePrompt,
-                style = defaultStylePresets.random(),
-                cfgScale = cfgScale,
+            DezgoPrompt(
+                prompt = prompts.joinToString { it.text },
+                negativePrompt = negativePrompt,
+                model = defaultStylePresets.random(),
                 height = height,
                 width = width,
-                steps = steps,
             )
         )
 
-        Logger.getAnonymousLogger().info("Sending Stability prompt: $body")
+        Logger.getAnonymousLogger().info("Sending text-to-image prompt: $body")
 
         return http.post(endpoint) {
-            bearerAuth(apiKey)
+            header("X-Dezgo-Key", secrets.dezgo.key)
             accept(ContentType.Image.PNG)
             contentType(ContentType.Application.Json.withCharset(UTF_8))
             setBody(body)
@@ -77,7 +74,7 @@ class Ai {
             File(folder).mkdirs()
         }
 
-        val fileName = "$prefix-${Random.nextInt(100_000_000, 999_999_999)}-ai.png"
+        val fileName = "$prefix-${Random.nextInt(100_000_000, 999_999_999)}-ai.jpg"
         val file = File("$folder/$fileName")
 
         withContext(Dispatchers.IO) {
@@ -89,21 +86,21 @@ class Ai {
 }
 
 @Serializable
-data class StabilityPrompt(
-    @SerialName("text_prompts")
-    val prompts: List<StabilityTextPrompt>,
-    @SerialName("style_preset")
-    val style: String?,
-    @SerialName("cfg_scale")
-    val cfgScale: Int,
+data class DezgoPrompt(
+    @SerialName("negative_prompt")
+    val negativePrompt: String,
+    val prompt: String,
+    val model: String?,
     val height: Int,
     val width: Int,
-    val steps: Int = 40,
-    val samples: Int = 1
+    val sampler: String? = "dpmpp_2m_karras",
+    val steps: Int = 20,
+    val guidance: Int = 7,
+    val format: String = "jpg",
 )
 
 @Serializable
-data class StabilityTextPrompt(
+data class TextPrompt(
     val text: String,
     val weight: Double = 1.0
 )

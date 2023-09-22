@@ -437,7 +437,7 @@ fun Route.cardRoutes() {
                             "card-${card.id!!}",
                             buildList {
                                 add(
-                                    StabilityTextPrompt(
+                                    TextPrompt(
                                         card.name!!
                                     )
                                 )
@@ -446,13 +446,13 @@ fun Route.cardRoutes() {
 
                                 if (message.isNotBlank()) {
                                     add(
-                                        StabilityTextPrompt(message, .5)
+                                        TextPrompt(message, .5)
                                     )
                                 }
 
                                 if (!card.location.isNullOrBlank()) {
                                     add(
-                                        StabilityTextPrompt(card.location!!, .25)
+                                        TextPrompt(card.location!!, .25)
                                     )
                                 }
                             }
