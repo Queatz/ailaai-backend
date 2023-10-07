@@ -16,7 +16,11 @@ fun Route.reminderRoutes() {
     authenticate {
         get("/reminders") {
             respond {
-                db.reminders(me.id!!)
+                db.reminders(
+                    me.id!!,
+                    offset = call.parameters["offset"]?.toInt() ?: 0,
+                    limit = call.parameters["limit"]?.toInt() ?: 100
+                )
             }
         }
 
@@ -62,6 +66,15 @@ fun Route.reminderRoutes() {
                 } else {
                     HttpStatusCode.NotFound
                 }
+            }
+        }
+
+        get("/reminders/{id}/occurrences") {
+            respond {
+                val start = call.parameters["start"]?.toInstant() ?: return@respond HttpStatusCode.BadRequest.description("Missing 'start' parameter")
+                val end = call.parameters["end"]?.toInstant() ?: return@respond HttpStatusCode.BadRequest.description("Missing 'end' parameter")
+
+                db.occurrences(me.id!!, start, end, listOf(parameter("id")))
             }
         }
 

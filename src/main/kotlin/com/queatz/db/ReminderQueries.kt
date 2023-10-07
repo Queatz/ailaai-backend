@@ -10,7 +10,7 @@ class ReminderOccurrences(
     val occurrences: List<ReminderOccurrence>,
 )
 
-fun Db.reminders(person: String, offset: Int = 0, limit: Int = 50) = list(
+fun Db.reminders(person: String, offset: Int = 0, limit: Int = 20) = list(
     Reminder::class,
     """
         for x in @@collection
@@ -26,13 +26,14 @@ fun Db.reminders(person: String, offset: Int = 0, limit: Int = 50) = list(
     )
 )
 
-fun Db.occurrences(person: String, start: Instant, end: Instant) = query(
+fun Db.occurrences(person: String, start: Instant, end: Instant, reminders: List<String>? = null) = query(
     ReminderOccurrences::class,
     """
         let dayRangeStart = date_trunc(@start, 'd')
         let dayRange = range(0, date_diff(@start, @end, 'd'))
         for reminder in ${Reminder::class.collection()}
             filter reminder.${f(Reminder::person)} == @person
+                and (@reminders == null or reminder._key in @reminders)
                 and reminder.${f(Reminder::start)} <= @end
                 and (reminder.${f(Reminder::end)} == null or reminder.${f(Reminder::end)} >= @start)
             let utcOffset = reminder.${f(Reminder::utcOffset)} || 0.0
@@ -119,6 +120,7 @@ fun Db.occurrences(person: String, start: Instant, end: Instant) = query(
     """.trimIndent(),
     mapOf(
         "person" to person,
+        "reminders" to reminders,
         "start" to start,
         "end" to end,
     )
