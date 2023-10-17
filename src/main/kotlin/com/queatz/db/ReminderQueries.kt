@@ -113,7 +113,7 @@ fun Db.occurrences(person: String, start: Instant, end: Instant, reminders: List
                     return occurrence
             )
             return {
-                reminder: merge(reminder, { groups: [@start, @end] }),
+                reminder,
                 dates,
                 occurrences
             }

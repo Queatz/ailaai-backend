@@ -69,7 +69,8 @@ fun Route.cardRoutes() {
                     search = search,
                     nearbyMaxDistance = defaultNearbyMaxDistanceKm,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
-                    limit = call.parameters["limit"]?.toInt() ?: 20
+                    limit = call.parameters["limit"]?.toInt() ?: 20,
+                    public = call.parameters["public"]?.toBoolean() ?: false
                 )
             }
         }
@@ -117,6 +118,10 @@ fun Route.cardRoutes() {
                 if (parentCard?.isMineOrIAmCollaborator(me) == false) {
                     HttpStatusCode.Forbidden.description("Not a collaborator on this parent")
                 } else {
+                    if (card.parent == null && card.equipped == null && card.geo == null) {
+                        card.offline = true
+                    }
+
                     db.insert(
                         Card(
                             person.id!!,

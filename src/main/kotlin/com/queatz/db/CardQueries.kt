@@ -71,7 +71,7 @@ fun Db.collaborationsOfPerson(person: String) = list(
  * @person The current user
  * @search Optionally filter cards
  */
-fun Db.savesOfPerson(person: String, search: String? = null) = query(
+fun Db.savedCardsOfPerson(person: String, search: String? = null, offset: Int = 0, limit: Int = 20) = query(
     SaveAndCard::class,
     """
         for save in `${Save::class.collection()}`
@@ -80,6 +80,7 @@ fun Db.savesOfPerson(person: String, search: String? = null) = query(
                 and save.${f(Save::person)} == @person
                 and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
             sort save.${f(Save::createdAt)} desc
+            limit @offset, @limit
             return {
                 save: save,
                 card: merge(
@@ -92,7 +93,9 @@ fun Db.savesOfPerson(person: String, search: String? = null) = query(
     """.trimIndent(),
     mapOf(
         "person" to person,
-        "search" to search?.lowercase()
+        "search" to search?.lowercase(),
+        "offset" to offset,
+        "limit" to limit
     )
 )
 
@@ -185,7 +188,7 @@ fun Db.explore(
                 )
             let d = x.${f(Card::geo)} == null ? null : distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             filter (
-                (d != null and d <= @nearbyMaxDistance and @public) ${if (person == null) "" else orIsFriendCard(public)}
+                ${if (person == null || public) "d != null and d <= @nearbyMaxDistance" else isFriendCard(false)}
             )
             sort d == null, d
             limit @offset, @limit
@@ -199,18 +202,21 @@ fun Db.explore(
     buildMap {
         if (person != null) {
             put("personKey", person.asKey())
-            put("person", person.asId(Person::class))
+            if (!public) {
+                put("person", person.asId(Person::class))
+            }
         }
         put("geo", geo)
         put("search", search?.trim()?.lowercase())
-        put("nearbyMaxDistance", nearbyMaxDistance)
+        if (public) {
+            put("nearbyMaxDistance", nearbyMaxDistance)
+        }
         put("offset", offset)
         put("limit", limit)
-        put("public", public)
     }
 )
 
-fun Db.orIsFriendCard(onlyProfile: Boolean) = """or (${if (onlyProfile) "x.${f(Card::equipped)} == true and " else ""}first(
+fun Db.isFriendCard(onlyProfile: Boolean) = """(${if (onlyProfile) "x.${f(Card::equipped)} == true and " else ""}first(
 for group, myMember in outbound @person graph `${Member::class.graph()}`
     filter myMember.${f(Member::gone)} != true
     for friend, member in inbound group graph `${Member::class.graph()}`

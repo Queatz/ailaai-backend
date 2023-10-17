@@ -97,7 +97,7 @@ fun Db.stories(geo: List<Double>, person: String, nearbyMaxDistance: Double, off
             filter x.${f(Story::published)} == true
             let d = x.${f(Story::geo)} == null ? null : distance(x.${f(Story::geo)}[0], x.${f(Story::geo)}[1], @geo[0], @geo[1])
             filter (
-                (d != null and d <= @nearbyMaxDistance and @public) or x.${f(Story::person)} == @personKey or first(
+                @public ? (d != null and d <= @nearbyMaxDistance) : (x.${f(Story::person)} == @personKey or first(
                     for group, myMember in outbound @person graph `${Member::class.graph()}`
                         filter myMember.${f(Member::gone)} != true
                         for friend, member in inbound group graph `${Member::class.graph()}`
@@ -105,7 +105,7 @@ fun Db.stories(geo: List<Double>, person: String, nearbyMaxDistance: Double, off
                                 and friend._key == x.${f(Story::person)}
                             limit 1
                             return true
-                ) == true
+                ) == true)
             )
             sort x.${f(Story::publishDate)} desc, x.${f(Story::createdAt)} desc
             limit @offset, @limit

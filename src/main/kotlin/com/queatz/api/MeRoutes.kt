@@ -223,9 +223,11 @@ fun Route.meRoutes() {
 
         get("/me/saved") {
             respond {
-                db.savesOfPerson(
+                db.savedCardsOfPerson(
                     me.id!!,
                     call.parameters["search"],
+                    call.parameters["offset"]?.toInt() ?: 0,
+                    call.parameters["limit"]?.toInt() ?: 20,
                 )
             }
         }

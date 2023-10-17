@@ -45,7 +45,8 @@ fun Route.storyRoutes() {
                     me.id!!,
                     defaultNearbyMaxDistanceKm,
                     call.parameters["offset"]?.toInt() ?: 0,
-                    call.parameters["limit"]?.toInt() ?: 20
+                    call.parameters["limit"]?.toInt() ?: 20,
+                    call.parameters["public"]?.toBoolean() ?: false
                 )
             }
         }
