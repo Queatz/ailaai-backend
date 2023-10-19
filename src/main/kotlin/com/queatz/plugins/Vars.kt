@@ -26,4 +26,4 @@ val app = App()
 val notify = Notify()
 val ai = Ai()
 
-const val defaultNearbyMaxDistanceKm = 100_000.0
+const val defaultNearbyMaxDistanceInMeters = 100_000.0

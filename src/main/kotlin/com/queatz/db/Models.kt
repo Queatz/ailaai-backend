@@ -119,8 +119,8 @@ class Card(
 class Group(
     var name: String? = null,
     var seen: Instant? = null,
-    var published: Instant? = null,
-    var description: String? = null
+    var description: String? = null,
+    var open: Boolean? = null
 ) : Model()
 
 @Serializable

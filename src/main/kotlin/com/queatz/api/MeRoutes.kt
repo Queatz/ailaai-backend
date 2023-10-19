@@ -95,7 +95,7 @@ fun Route.meRoutes() {
                         unreadStoriesCount = db.countStories(
                             me.geo!!,
                             me.id!!,
-                            nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                            nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                             after = readStoriesUntil
                         )
                     }
@@ -114,7 +114,7 @@ fun Route.meRoutes() {
                         unreadStoriesCount = db.countStories(
                             me.geo!!,
                             me.id!!,
-                            nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                            nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                             after = readStoriesUntil
                         )
                     }

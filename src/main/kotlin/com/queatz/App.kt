@@ -14,13 +14,13 @@ class App {
                 val group = it.id!!.asId(Group::class)
 
                 people.distinct().forEach {
-                    createMember(it, group, host = hosts.contains(it).takeIf { it })
+                    createMember(it, group, host = if (hosts.isEmpty()) true else hosts.contains(it).takeIf { it })
                 }
             }
 
     fun createMember(person: String, group: String, host: Boolean? = null) = db.insert(
         Member(
-            host = host
+            host = host?.takeIf { it }
         ).also {
             it.from = person.asId(Person::class)
             it.to = group.asId(Group::class)

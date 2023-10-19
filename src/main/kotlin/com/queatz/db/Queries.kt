@@ -1,5 +1,6 @@
 package com.queatz.db
 
+import com.queatz.plugins.defaultNearbyMaxDistanceInMeters
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
@@ -318,14 +319,91 @@ fun Db.groups(person: String) = query(
 )
 
 /**
+ * @geo The geo to bias for
+ * @search Search query
+ */
+fun Db.openGroups(
+    person: String,
+    geo: List<Double>? = null,
+    nearbyMaxDistance: Double = defaultNearbyMaxDistanceInMeters,
+    search: String? = null,
+    public: Boolean = false,
+    offset: Int = 0,
+    limit: Int = 20
+) = query(
+    GroupExtended::class,
+    """
+        for group in ${Group::class.collection()}
+            filter group.${f(Group::open)} == true
+                and (@search == null or contains(lower(group.${f(Group::name)}), @search) )
+            let d = ${groupGeo()}
+            filter @public ? (d != null and d <= @nearbyMaxDistance) : ${isFriendGroup()}
+            sort d == null, d, group.${f(Group::seen)} desc
+            limit @offset, @limit
+            return ${groupExtended()}
+    """.trimIndent(),
+    mapOf(
+        "person" to person.asId(Person::class),
+        "geo" to geo,
+        "nearbyMaxDistance" to nearbyMaxDistance,
+        "search" to search,
+        "public" to public,
+        "offset" to offset,
+        "limit" to limit,
+    )
+)
+
+/**
+ * Used in openGroups() only
+ *
+ * @return Nearest group member's geo, excluding the current user
+ */
+fun Db.groupGeo() = """first(
+    for person, member in inbound group graph `${Member::class.graph()}`
+        filter member.${f(Member::gone)} != true
+            and person.${f(Person::geo)} != null
+            and person._id != @person
+            and member.${f(Member::seen)} >= date_subtract(DATE_NOW(), 7, 'day') // Only include active members
+        let memberDistance = distance(person.${f(Person::geo)}[0], person.${f(Person::geo)}[1], @geo[0], @geo[1])
+        sort memberDistance == null, memberDistance, member.${f(Member::seen)} desc
+        limit 1
+        return memberDistance
+)"""
+
+/**
+ * Used in openGroups() only
+ *
+ * @return true if `@person` has any friends in `group`
+ */
+fun Db.isFriendGroup() = """first(
+for g, myMember in outbound @person graph `${Member::class.graph()}`
+    filter myMember.${f(Member::gone)} != true
+    for groupPerson, groupMember in inbound group graph `${Member::class.graph()}`
+        filter groupMember.${f(Member::gone)} != true
+        for friend, member in inbound g graph `${Member::class.graph()}`
+            filter member.${f(Member::gone)} != true
+                and groupMember._id == member._id
+                and member._from != @person
+            limit 1
+            return true
+) == true"""
+
+/**
  * @person The current user
  * @group The group to fetch
  */
 fun Db.group(person: String, group: String) = query(
     GroupExtended::class,
     """
-        for group in outbound @person graph `${Member::class.graph()}`
+        for group in ${Group::class.collection()}
             filter group._key == @group
+                and (group.${f(Group::open)} == true or first(
+                    for x, member in outbound @person graph `${Member::class.graph()}`
+                        filter x._key == @group
+                            and member.${f(Member::gone)} != true
+                        limit 1
+                        return true
+                ) == true)
             limit 1
             return ${groupExtended()}
     """.trimIndent(),
@@ -333,7 +411,7 @@ fun Db.group(person: String, group: String) = query(
         "person" to person.asId(Person::class),
         "group" to group,
     )
-).first()!!
+).firstOrNull()
 
 /**
  * @me The current user

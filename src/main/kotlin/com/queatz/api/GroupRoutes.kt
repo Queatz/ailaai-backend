@@ -30,6 +30,41 @@ fun Route.groupRoutes() {
             }
         }
 
+        get("/groups/explore") {
+            respond {
+                val geo = call.parameters["geo"]?.split(",")?.map { it.toDouble() }
+
+                if (geo?.size != 2) {
+                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
+                }
+
+                val person = me
+
+                val public = call.parameters["public"]?.toBoolean() ?: false
+
+                val search = call.parameters["search"]
+                    ?.takeIf { it.isNotBlank() }
+                    ?.also { search ->
+                        // todo, should save this for top searches
+//                        db.insert(
+//                            Search(
+//                                search = search,
+//                                source = if (person == null) SearchSource.Web else null
+//                            )
+//                        )
+                    }
+
+                db.openGroups(
+                    person = person.id!!,
+                    geo = geo,
+                    search = search?.takeIf { it.isNotBlank() }?.lowercase(),
+                    public = public,
+                    offset = call.parameters["offset"]?.toInt() ?: 0,
+                    limit = call.parameters["limit"]?.toInt() ?: 20,
+                ).forApi()
+            }
+        }
+
         post("/groups") {
             respond {
                 call.receive<CreateGroupBody>().let {
@@ -49,12 +84,12 @@ fun Route.groupRoutes() {
         get("/groups/{id}") {
             respond {
                 val person = me
-                db.group(me.id!!, parameter("id")).also { group ->
+                db.group(me.id!!, parameter("id"))?.also { group ->
                     group.members?.find { it.person?.id == person.id }?.member?.let { member ->
                         member.seen = Clock.System.now()
                         db.update(member)
                     }
-                }.forApi()
+                }?.forApi() ?: HttpStatusCode.NotFound
             }
         }
 
@@ -77,6 +112,12 @@ fun Route.groupRoutes() {
                         group.description = groupUpdated.description
                     }
 
+                    if (member.host == true) {
+                        if (groupUpdated.open != null) {
+                            group.open = groupUpdated.open
+                        }
+                    }
+
                     db.update(group)
                 }
             }
@@ -84,13 +125,13 @@ fun Route.groupRoutes() {
 
         get("/groups/{id}/messages") {
             respond {
-                db.group(me.id!!, parameter("id")).let {
+                db.group(me.id!!, parameter("id"))?.let {
                     db.messages(
                         it.group!!.id!!,
                         call.parameters["before"]?.toInstant(),
                         call.parameters["limit"]?.toInt() ?: 20
                     )
-                }
+                } ?: HttpStatusCode.NotFound
             }
         }
 

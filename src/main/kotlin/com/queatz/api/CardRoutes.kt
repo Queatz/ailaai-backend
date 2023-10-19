@@ -67,7 +67,7 @@ fun Route.cardRoutes() {
                     person = person?.id,
                     geo = geo,
                     search = search,
-                    nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                    nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20,
                     public = call.parameters["public"]?.toBoolean() ?: false
@@ -91,7 +91,7 @@ fun Route.cardRoutes() {
                     person = person.id!!,
                     geo = geo,
                     search = call.parameters["search"]?.takeIf { it.isNotBlank() },
-                    nearbyMaxDistance = defaultNearbyMaxDistanceKm,
+                    nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
                 ) + db.cardsOfPerson(me.id!!)).flatMap {
