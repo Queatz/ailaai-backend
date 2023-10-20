@@ -124,6 +124,13 @@ class Group(
 ) : Model()
 
 @Serializable
+class JoinRequest(
+    var person: String? = null,
+    var group: String? = null,
+    var message: String? = null
+) : Model()
+
+@Serializable
 class Member(
     var seen: Instant? = null,
     var hide: Boolean? = null,

@@ -185,8 +185,9 @@ class Push {
                                         "action" to pushData.action!!.name,
                                         "data" to json.encodeToString(
                                             when (val it = pushData.data) {
-                                                is CollaborationPushData -> it as CollaborationPushData
-                                                is MessagePushData -> it as MessagePushData
+                                                is CollaborationPushData -> it
+                                                is MessagePushData -> it
+                                                is JoinRequestPushData -> it
                                                 else -> error("Unknown push data type")
                                             }
                                         )
@@ -217,7 +218,8 @@ class Push {
 
 enum class PushAction {
     Message,
-    Collaboration
+    Collaboration,
+    JoinRequest
 }
 
 @Serializable
@@ -245,6 +247,13 @@ data class CollaborationPushData(
 ) : PushDataData()
 
 @Serializable
+data class JoinRequestPushData(
+    val person: Person,
+    val group: Group,
+    val event: JoinRequestEvent,
+) : PushDataData()
+
+@Serializable
 data class CollaborationEventData (
     val card: Card? = null,
     val person: Person? = null,
@@ -265,6 +274,10 @@ enum class CollaborationEventDataDetails {
     Conversation,
     Name,
     Location,
+}
+
+enum class JoinRequestEvent {
+    Request
 }
 
 @Serializable

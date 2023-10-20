@@ -16,12 +16,9 @@ class Notify {
             )
         )
 
-        Logger.getAnonymousLogger().info("Sending message push")
-
         db.memberDevices(group.id!!).filter {
             it.member?.from != from.id
         }.apply {
-            Logger.getAnonymousLogger().info("count: $size")
             // Un-hide any groups
             filter { it.member?.hide == true }.forEach {
                 it.member!!.hide = false
@@ -35,5 +32,40 @@ class Notify {
                 }
             }
         }
+    }
+
+    fun newJoinRequest(person: Person, group: Group) {
+        val pushData = PushData(
+            PushAction.JoinRequest,
+            JoinRequestPushData(
+                Person(name = person.name).apply { id = person.id },
+                Group().apply {
+                    name = group.name
+                    id = group.id!!
+                              },
+                JoinRequestEvent.Request
+            )
+        )
+
+        db.memberDevices(group.id!!).filter {
+            it.member?.from != person.id
+        }.apply {
+            // Un-hide any groups
+            filter { it.member?.hide == true }.forEach {
+                it.member!!.hide = false
+                db.update(it.member!!)
+            }
+
+            // Send push
+            forEach {
+                it.devices?.forEach { device ->
+                    push.sendPush(device, pushData)
+                }
+            }
+        }
+    }
+
+    fun newMember(person: Person, group: Group) {
+
     }
 }

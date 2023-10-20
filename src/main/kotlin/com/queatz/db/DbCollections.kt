@@ -103,5 +103,9 @@ fun collections() = listOf(
         ensurePersistentIndex(listOf(StickerPack::name.name), PersistentIndexOptions())
     },
     StickerPackSave::class.db(CollectionType.EDGES, listOf(StickerPack::class, Person::class)) {
+    },
+    JoinRequest::class.db {
+        ensurePersistentIndex(listOf(JoinRequest::person.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(JoinRequest::group.name), PersistentIndexOptions())
     }
 )

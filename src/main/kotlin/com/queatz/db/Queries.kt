@@ -482,11 +482,12 @@ fun Db.transferWithCode(code: String) = one(
 /**
  * @group The group to fetch devices for
  */
-fun Db.memberDevices(group: String) = query(
+fun Db.memberDevices(group: String, onlyHosts: Boolean = false) = query(
     MemberDevice::class,
     """
         for member in `${Member::class.collection()}`
             filter member._to == @group and member.${f(Member::gone)} != true
+                and (@onlyHosts != true or member.${f(Member::host)} == true)
             return {
                 member,
                 devices: (
@@ -497,7 +498,8 @@ fun Db.memberDevices(group: String) = query(
             }
     """.trimIndent(),
     mapOf(
-        "group" to group.asId(Group::class)
+        "group" to group.asId(Group::class),
+        "onlyHosts" to onlyHosts
     )
 )
 /**
@@ -730,6 +732,12 @@ class GroupExtended(
 class MemberAndPerson(
     var person: Person? = null,
     var member: Member? = null
+)
+
+@Serializable
+class JoinRequestAndPerson(
+    var person: Person? = null,
+    var joinRequest: JoinRequest? = null
 )
 
 @Serializable

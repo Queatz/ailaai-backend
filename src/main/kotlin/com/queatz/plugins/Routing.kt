@@ -41,6 +41,7 @@ fun Application.configureRouting() {
         exportDataRoutes()
         linkDeviceRoutes()
         pushRoutes()
+        joinRequestRoutes()
 
         static("/static") {
             files("static")
