@@ -34,7 +34,7 @@ class Notify {
         }
     }
 
-    fun newJoinRequest(person: Person, group: Group) {
+    fun newJoinRequest(person: Person, joinRequest: JoinRequest, group: Group) {
         val pushData = PushData(
             PushAction.JoinRequest,
             JoinRequestPushData(
@@ -42,7 +42,11 @@ class Notify {
                 Group().apply {
                     name = group.name
                     id = group.id!!
-                              },
+                },
+                JoinRequest().apply {
+                    id = joinRequest.id
+                    message = joinRequest.message
+                },
                 JoinRequestEvent.Request
             )
         )

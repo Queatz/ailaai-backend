@@ -8,6 +8,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
 
 
 fun Route.joinRequestRoutes() {
@@ -40,6 +41,10 @@ fun Route.joinRequestRoutes() {
                 } else if (group == null) {
                     HttpStatusCode.NotFound
                 } else {
+                    group.group?.let { group ->
+                        group.seen = Clock.System.now()
+                        db.update(group)
+                    }
                     db.insert(
                         JoinRequest(
                             person = me.id!!,
@@ -47,7 +52,7 @@ fun Route.joinRequestRoutes() {
                             message = joinRequest.message
                         )
                     ).also {
-                        notify.newJoinRequest(me, group.group!!)
+                        notify.newJoinRequest(me, it, group.group!!)
                     }
                 }
             }

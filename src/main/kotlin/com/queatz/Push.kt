@@ -250,6 +250,7 @@ data class CollaborationPushData(
 data class JoinRequestPushData(
     val person: Person,
     val group: Group,
+    val joinRequest: JoinRequest,
     val event: JoinRequestEvent,
 ) : PushDataData()
 
