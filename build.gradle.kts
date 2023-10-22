@@ -4,8 +4,8 @@ val logback_version: String by project
 
 plugins {
     application
-    kotlin("jvm") version "1.8.21"
-    kotlin("plugin.serialization") version "1.8.21"
+    kotlin("jvm") version "1.9.10"
+    kotlin("plugin.serialization") version "1.9.10"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -23,7 +23,7 @@ repositories {
     mavenCentral()
     //maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
-val osName = System.getProperty("os.name").toLowerCase()
+val osName = System.getProperty("os.name").lowercase()
 val tcnative_classifier = when {
     osName.contains("win") -> "windows-x86_64"
     osName.contains("linux") -> ""
@@ -32,6 +32,9 @@ val tcnative_classifier = when {
 }
 
 dependencies {
+    implementation("app.ailaai.shared:push")
+    implementation("app.ailaai.shared:models")
+
     if (tcnative_classifier != null) {
         implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final:linux-x86_64")
     } else {
@@ -58,7 +61,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-client-core-jvm:$ktor_version")
     implementation("io.ktor:ktor-client-cio-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-caching-headers-jvm:2.2.3")
+    implementation("io.ktor:ktor-server-caching-headers-jvm:2.2.4")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
 }

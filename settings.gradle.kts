@@ -1,1 +1,3 @@
-rootProject.name = "Ai Là Ai Backend"
+includeBuild("../ailaai-shared")
+
+rootProject.name = "Ai La Ai Backend"

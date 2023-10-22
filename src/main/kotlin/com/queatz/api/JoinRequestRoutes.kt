@@ -77,7 +77,7 @@ fun Route.joinRequestRoutes() {
                 } else {
                     app.createMember(joinRequest.person!!, joinRequest.group!!, host = false)
                     db.delete(joinRequest)
-                    notify.newMember(person, group.group!!)
+                    notify.newMember(me, person, group.group!!)
                     HttpStatusCode.OK
                 }
             }

@@ -6,6 +6,10 @@ import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.json
 import com.queatz.plugins.secrets
+import com.queatz.push.CollaborationPushData
+import com.queatz.push.JoinRequestPushData
+import com.queatz.push.MessagePushData
+import com.queatz.push.PushData
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -214,71 +218,6 @@ class Push {
     private fun onDeviceUnregistered(device: Device) {
         db.deleteDevice(device.type!!, device.token!!)
     }
-}
-
-enum class PushAction {
-    Message,
-    Collaboration,
-    JoinRequest
-}
-
-@Serializable
-data class PushData(
-    val action: PushAction? = null,
-    val data: PushDataData? = null,
-)
-
-@Serializable
-sealed class PushDataData
-
-@Serializable
-data class MessagePushData(
-    val group: Group,
-    val person: Person,
-    val message: Message,
-) : PushDataData()
-
-@Serializable
-data class CollaborationPushData(
-    val person: Person,
-    val card: Card,
-    val event: CollaborationEvent,
-    val data: CollaborationEventData,
-) : PushDataData()
-
-@Serializable
-data class JoinRequestPushData(
-    val person: Person,
-    val group: Group,
-    val joinRequest: JoinRequest,
-    val event: JoinRequestEvent,
-) : PushDataData()
-
-@Serializable
-data class CollaborationEventData (
-    val card: Card? = null,
-    val person: Person? = null,
-    val details: CollaborationEventDataDetails? = null
-)
-
-enum class CollaborationEvent {
-    AddedPerson,
-    RemovedPerson,
-    AddedCard,
-    RemovedCard,
-    UpdatedCard,
-}
-
-enum class CollaborationEventDataDetails {
-    Photo,
-    Video,
-    Conversation,
-    Name,
-    Location,
-}
-
-enum class JoinRequestEvent {
-    Request
 }
 
 @Serializable

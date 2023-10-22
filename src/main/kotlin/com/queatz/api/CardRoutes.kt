@@ -1,8 +1,11 @@
 package com.queatz.api
 
-import com.queatz.*
+import com.queatz.TextPrompt
 import com.queatz.db.*
+import com.queatz.parameter
 import com.queatz.plugins.*
+import com.queatz.push.*
+import com.queatz.receiveFile
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -724,21 +727,3 @@ fun Card.isActiveOrMine(me: Person?) = (me != null && isMineOrIAmCollaborator(me
 fun Card.isMineOrIAmCollaborator(me: Person) = person!!.asKey() == me.id!! || collaborators?.contains(me.id!!) == true
 
 fun Card.getConversation() = json.decodeFromString<ConversationItem>(conversation ?: "{}")
-
-@Serializable
-data class ConversationItem(
-    var title: String = "",
-    var message: String = "",
-    var action: ConversationAction? = null,
-    var items: MutableList<ConversationItem> = mutableListOf(),
-)
-
-@Serializable
-data class CardOptions(
-    var enableReplies: Boolean? = null,
-    var enableAnonymousReplies: Boolean? = null
-)
-
-enum class ConversationAction {
-    Message
-}

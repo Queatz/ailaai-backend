@@ -2,10 +2,7 @@ package com.queatz.api
 
 import com.queatz.db.*
 import com.queatz.parameter
-import com.queatz.plugins.app
-import com.queatz.plugins.db
-import com.queatz.plugins.me
-import com.queatz.plugins.respond
+import com.queatz.plugins.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -17,6 +14,8 @@ fun Route.memberRoutes() {
         post("/members") {
             respond {
                 val newMember = call.receive<Member>()
+                val group = db.group(me.id!!, newMember.to!!)
+                val person = db.document(Person::class, newMember.from!!)
                 if (newMember.id != null) {
                     HttpStatusCode.BadRequest.description("'id' cannot be specified")
                 } else if (newMember.from == null) {
@@ -25,12 +24,13 @@ fun Route.memberRoutes() {
                     HttpStatusCode.BadRequest.description("'to' is missing")
                 } else if (db.member(newMember.from!!, newMember.to!!) != null) {
                     HttpStatusCode.Forbidden.description("Member is already in group")
-                } else if (db.group(me.id!!, newMember.to!!) == null) {
+                } else if (group == null) {
                     HttpStatusCode.NotFound.description("Group not found")
-                } else if (db.document(Person::class, newMember.from!!) == null) {
+                } else if (person == null) {
                     HttpStatusCode.NotFound.description("Person not found")
                 } else {
                     app.createMember(newMember.from!!, newMember.to!!, host = false)
+                    notify.newMember(me, person, group.group!!)
                 }
             }
         }

@@ -1,14 +1,6 @@
 package com.queatz.db
 
 import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-
-@Serializable
-class ReminderOccurrences(
-    val reminder: Reminder,
-    val dates: List<Instant>,
-    val occurrences: List<ReminderOccurrence>,
-)
 
 fun Db.reminders(person: String, offset: Int = 0, limit: Int = 20) = list(
     Reminder::class,

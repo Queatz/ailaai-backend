@@ -11,9 +11,6 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
-@Serializable
-data class WildReplyBody(val message: String, val conversation: String?, val card: String, val device: String)
-
 fun Route.wildRoutes() {
     authenticate(optional = true) {
         post("/wild/reply") {
