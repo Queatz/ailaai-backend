@@ -1,6 +1,7 @@
 package com.queatz.api
 
 import com.queatz.db.*
+import com.queatz.notBlank
 import com.queatz.plugins.*
 import com.queatz.receiveFile
 import com.queatz.scatterGeo
@@ -225,7 +226,7 @@ fun Route.meRoutes() {
             respond {
                 db.savedCardsOfPerson(
                     me.id!!,
-                    call.parameters["search"],
+                    call.parameters["search"]?.notBlank,
                     call.parameters["offset"]?.toInt() ?: 0,
                     call.parameters["limit"]?.toInt() ?: 20,
                 )

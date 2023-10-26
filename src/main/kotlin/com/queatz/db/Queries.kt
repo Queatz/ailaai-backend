@@ -117,6 +117,65 @@ val Db.totalPublishedCards
         """
     ).first()!!
 
+val Db.totalDraftStories
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Story::class.collection()}`
+                    filter x.${f(Story::published)} != true
+                    return true
+            )
+        """
+    ).first()!!
+
+val Db.totalPublishedStories
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Story::class.collection()}`
+                    filter x.${f(Story::published)} == true
+                    return true
+            )
+        """
+    ).first()!!
+
+val Db.totalOpenGroups
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Group::class.collection()}`
+                    filter x.${f(Group::open)} == true
+                    return true
+            )
+        """
+    ).first()!!
+
+val Db.totalClosedGroups
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Group::class.collection()}`
+                    filter x.${f(Group::open)} != true
+                    return true
+            )
+        """
+    ).first()!!
+
+val Db.totalReminders
+    get() = query(
+        Int::class,
+        """
+            return count(
+                for x in `${Reminder::class.collection()}`
+                    return true
+            )
+        """
+    ).first()!!
+
 /**
  * @code The code of the invite to fetch
  */

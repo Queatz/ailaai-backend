@@ -17,7 +17,12 @@ data class AppStats(
     val newPeople24Hours: Int,
     val totalPeople: Int,
     val totalDraftCards: Int,
-    val totalPublishedCards: Int
+    val totalPublishedCards: Int,
+    val totalDraftStories: Int,
+    val totalPublishedStories: Int,
+    val totalClosedGroups: Int,
+    val totalOpenGroups: Int,
+    val totalReminders: Int
 )
 
 fun Route.statsRoutes() {
@@ -33,6 +38,11 @@ fun Route.statsRoutes() {
                 totalPeople = db.totalPeople,
                 totalDraftCards = db.totalDraftCards,
                 totalPublishedCards = db.totalPublishedCards,
+                totalDraftStories = db.totalDraftStories,
+                totalPublishedStories = db.totalPublishedStories,
+                totalClosedGroups = db.totalClosedGroups,
+                totalOpenGroups = db.totalOpenGroups,
+                totalReminders = db.totalReminders
             )
         }
     }

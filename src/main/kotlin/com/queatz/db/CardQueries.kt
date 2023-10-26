@@ -208,7 +208,7 @@ fun Db.explore(
         }
         put("geo", geo)
         put("search", search?.trim()?.lowercase())
-        if (public) {
+        if (person == null || public) {
             put("nearbyMaxDistance", nearbyMaxDistance)
         }
         put("offset", offset)

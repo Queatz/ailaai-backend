@@ -1,6 +1,7 @@
 package com.queatz.api
 
 import com.queatz.db.*
+import com.queatz.notBlank
 import com.queatz.parameter
 import com.queatz.plugins.*
 import com.queatz.receiveFile
@@ -43,7 +44,7 @@ fun Route.groupRoutes() {
                 val public = call.parameters["public"]?.toBoolean() ?: false
 
                 val search = call.parameters["search"]
-                    ?.takeIf { it.isNotBlank() }
+                    ?.notBlank
                     ?.also { search ->
                         // todo, should save this for top searches
 //                        db.insert(
@@ -57,7 +58,7 @@ fun Route.groupRoutes() {
                 db.openGroups(
                     person = person.id!!,
                     geo = geo,
-                    search = search?.takeIf { it.isNotBlank() }?.lowercase(),
+                    search = search?.notBlank?.lowercase(),
                     public = public,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20,

@@ -2,6 +2,7 @@ package com.queatz.api
 
 import com.queatz.TextPrompt
 import com.queatz.db.*
+import com.queatz.notBlank
 import com.queatz.parameter
 import com.queatz.plugins.*
 import com.queatz.push.*
@@ -12,7 +13,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import kotlin.reflect.KMutableProperty1
 
 fun Route.cardRoutes() {
@@ -56,7 +56,7 @@ fun Route.cardRoutes() {
                 val person = meOrNull
 
                 val search = call.parameters["search"]
-                    ?.takeIf { it.isNotBlank() }
+                    ?.notBlank
                     ?.also { search ->
                         db.insert(
                             Search(
@@ -73,7 +73,7 @@ fun Route.cardRoutes() {
                     nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20,
-                    public = call.parameters["public"]?.toBoolean() ?: false
+                    public = (call.parameters["public"]?.toBoolean() ?: false) || (person == null)
                 )
             }
         }
@@ -93,7 +93,7 @@ fun Route.cardRoutes() {
                 (db.explore(
                     person = person.id!!,
                     geo = geo,
-                    search = call.parameters["search"]?.takeIf { it.isNotBlank() },
+                    search = call.parameters["search"]?.notBlank,
                     nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20
