@@ -83,7 +83,7 @@ class Notify {
             // Send push
             forEach {
                 it.devices?.forEach { device ->
-                    push.sendPush(device, pushData.copy(show = it.member?.isSnoozedNow != true))
+                    push.sendPush(device, pushData.show(it.member?.isSnoozedNow != true))
                 }
             }
         }
@@ -97,5 +97,15 @@ class Notify {
         }
     }
 }
+
+fun PushData.show(show: Boolean) = PushData(
+    action,
+    data?.let {
+        when (it) {
+            is MessagePushData -> it.copy(show = show)
+            else -> data
+        }
+    }
+)
 
 private val Member.isSnoozedNow get() = snoozed == true || snoozedUntil?.let { it > Clock.System.now() } == true
