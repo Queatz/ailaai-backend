@@ -49,8 +49,18 @@ fun Route.memberRoutes() {
 
                         if (update.hide != null) {
                             member.hide = update.hide
-                            db.update(member)
                         }
+
+                        if (update.snoozedUntil != null) {
+                            member.snoozedUntil = update.snoozedUntil
+                        }
+
+                        if (update.snoozed != null) {
+                            member.snoozed = update.snoozed?.takeIf { it }
+                            member.snoozedUntil = null
+                        }
+
+                        db.update(member)
 
                         HttpStatusCode.NoContent
                     }

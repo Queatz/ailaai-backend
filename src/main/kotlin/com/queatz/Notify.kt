@@ -4,7 +4,7 @@ import com.queatz.db.*
 import com.queatz.plugins.db
 import com.queatz.plugins.push
 import com.queatz.push.*
-import java.util.logging.Logger
+import kotlinx.datetime.Clock
 
 class Notify {
     fun message(group: Group, from: Person, message: Message) {
@@ -83,7 +83,7 @@ class Notify {
             // Send push
             forEach {
                 it.devices?.forEach { device ->
-                    push.sendPush(device, pushData)
+                    push.sendPush(device, pushData.copy(show = it.member?.isSnoozedNow != true))
                 }
             }
         }
@@ -96,5 +96,6 @@ class Notify {
             db.update(it.member!!)
         }
     }
-
 }
+
+private val Member.isSnoozedNow get() = snoozed == true || snoozedUntil?.let { it > Clock.System.now() } == true

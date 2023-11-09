@@ -134,6 +134,7 @@ fun Route.cardRoutes() {
                             parent = parentCard?.id,
                             equipped = card.equipped,
                             offline = card.offline,
+                            geo = card.geo,
                             active = false
                         )
                     )
