@@ -178,7 +178,7 @@ fun Db.explore(
                 and (x.${f(Card::parent)} == null or @search != null) // When searching, include cards inside other cards
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
                 and x.${f(Card::offline)} != true
-                ${if (person == null) "" else "and (x.${f(Card::person)} != @personKey or x.${f(Card::equipped)} != true)"}
+                ${if (person == null || public) "" else "and x.${f(Card::person)} != @personKey"}
                 and (
                     @search == null 
                         or contains(lower(x.${f(Card::name)}), @search)
@@ -201,8 +201,8 @@ fun Db.explore(
     """.trimIndent(),
     buildMap {
         if (person != null) {
-            put("personKey", person.asKey())
             if (!public) {
+                put("personKey", person.asKey())
                 put("person", person.asId(Person::class))
             }
         }

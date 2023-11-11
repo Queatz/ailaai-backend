@@ -20,14 +20,31 @@ import kotlinx.serialization.encodeToString
 data class CreateGroupBody(val people: List<String>, val reuse: Boolean = false)
 
 fun Route.groupRoutes() {
-    authenticate {
-        get("/groups") {
+    authenticate(optional = true) {
+        get("/groups/{id}") {
             respond {
-                val me = me
-                me.seen = Clock.System.now()
-                db.update(me)
+                val person = meOrNull
+                db.group(person?.id, parameter("id"))?.also { group ->
+                    person?.let { me ->
+                        group.members?.find { it.person?.id == me.id }?.member?.let { member ->
+                            member.seen = Clock.System.now()
+                            db.update(member)
+                        }
+                    }
+                }?.forApi() ?: HttpStatusCode.NotFound
+            }
+        }
 
-                db.groups(me.id!!).forApi()
+
+        get("/groups/{id}/messages") {
+            respond {
+                db.group(meOrNull?.id, parameter("id"))?.let {
+                    db.messages(
+                        it.group!!.id!!,
+                        call.parameters["before"]?.toInstant(),
+                        call.parameters["limit"]?.toInt() ?: 20
+                    )
+                } ?: HttpStatusCode.NotFound
             }
         }
 
@@ -39,10 +56,7 @@ fun Route.groupRoutes() {
                     return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
                 }
 
-                val person = me
-
                 val public = call.parameters["public"]?.toBoolean() ?: false
-
                 val search = call.parameters["search"]
                     ?.notBlank
                     ?.also { search ->
@@ -56,13 +70,24 @@ fun Route.groupRoutes() {
                     }
 
                 db.openGroups(
-                    person = person.id!!,
                     geo = geo,
                     search = search?.notBlank?.lowercase(),
                     public = public,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20,
                 ).forApi()
+            }
+        }
+    }
+
+    authenticate {
+        get("/groups") {
+            respond {
+                val me = me
+                me.seen = Clock.System.now()
+                db.update(me)
+
+                db.groups(me.id!!).forApi()
             }
         }
 
@@ -81,19 +106,6 @@ fun Route.groupRoutes() {
                 }
             }
         }
-
-        get("/groups/{id}") {
-            respond {
-                val person = me
-                db.group(me.id!!, parameter("id"))?.also { group ->
-                    group.members?.find { it.person?.id == person.id }?.member?.let { member ->
-                        member.seen = Clock.System.now()
-                        db.update(member)
-                    }
-                }?.forApi() ?: HttpStatusCode.NotFound
-            }
-        }
-
 
         post("/groups/{id}") {
             respond {
@@ -121,18 +133,6 @@ fun Route.groupRoutes() {
 
                     db.update(group)
                 }
-            }
-        }
-
-        get("/groups/{id}/messages") {
-            respond {
-                db.group(me.id!!, parameter("id"))?.let {
-                    db.messages(
-                        it.group!!.id!!,
-                        call.parameters["before"]?.toInstant(),
-                        call.parameters["limit"]?.toInt() ?: 20
-                    )
-                } ?: HttpStatusCode.NotFound
             }
         }
 

@@ -381,7 +381,6 @@ fun Db.groups(person: String) = query(
  * @search Search query
  */
 fun Db.openGroups(
-    person: String,
     geo: List<Double>? = null,
     nearbyMaxDistance: Double = defaultNearbyMaxDistanceInMeters,
     search: String? = null,
@@ -401,7 +400,6 @@ fun Db.openGroups(
             return ${groupExtended()}
     """.trimIndent(),
     mapOf(
-        "person" to person.asId(Person::class),
         "geo" to geo,
         "nearbyMaxDistance" to nearbyMaxDistance,
         "search" to search,
@@ -420,7 +418,7 @@ fun Db.groupGeo() = """first(
     for person, member in inbound group graph `${Member::class.graph()}`
         filter member.${f(Member::gone)} != true
             and person.${f(Person::geo)} != null
-            and person._id != @person
+            // and person._id != @person
             and member.${f(Member::seen)} >= date_subtract(DATE_NOW(), 7, 'day') // Only include active members
         let memberDistance = distance(person.${f(Person::geo)}[0], person.${f(Person::geo)}[1], @geo[0], @geo[1])
         sort memberDistance == null, memberDistance, member.${f(Member::seen)} desc
@@ -450,23 +448,23 @@ for g, myMember in outbound @person graph `${Member::class.graph()}`
  * @person The current user
  * @group The group to fetch
  */
-fun Db.group(person: String, group: String) = query(
+fun Db.group(person: String?, group: String) = query(
     GroupExtended::class,
     """
         for group in ${Group::class.collection()}
             filter group._key == @group
-                and (group.${f(Group::open)} == true or first(
+                and (group.${f(Group::open)} == true or (@person != null && first(
                     for x, member in outbound @person graph `${Member::class.graph()}`
                         filter x._key == @group
                             and member.${f(Member::gone)} != true
                         limit 1
                         return true
-                ) == true)
+                )) == true)
             limit 1
             return ${groupExtended()}
     """.trimIndent(),
     mapOf(
-        "person" to person.asId(Person::class),
+        "person" to person?.asId(Person::class),
         "group" to group,
     )
 ).firstOrNull()
