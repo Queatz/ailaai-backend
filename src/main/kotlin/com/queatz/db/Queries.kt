@@ -381,6 +381,7 @@ fun Db.groups(person: String) = query(
  * @search Search query
  */
 fun Db.openGroups(
+    person: String?,
     geo: List<Double>? = null,
     nearbyMaxDistance: Double = defaultNearbyMaxDistanceInMeters,
     search: String? = null,
@@ -394,7 +395,7 @@ fun Db.openGroups(
             filter group.${f(Group::open)} == true
                 and (@search == null or contains(lower(group.${f(Group::name)}), @search) )
             let d = ${groupGeo()}
-            filter @public ? (d != null and d <= @nearbyMaxDistance) : ${isFriendGroup()}
+            filter ${if (public) "(d != null and d <= @nearbyMaxDistance)" else isFriendGroup()}
             sort d == null, d, group.${f(Group::seen)} desc
             limit @offset, @limit
             return ${groupExtended()}
@@ -403,10 +404,15 @@ fun Db.openGroups(
         "geo" to geo,
         "nearbyMaxDistance" to nearbyMaxDistance,
         "search" to search,
-        "public" to public,
         "offset" to offset,
         "limit" to limit,
-    )
+    ).let {
+        if (!public) {
+            it + mapOf("person" to person)
+        } else {
+            it
+        }
+    }
 )
 
 /**
@@ -453,20 +459,28 @@ fun Db.group(person: String?, group: String) = query(
     """
         for group in ${Group::class.collection()}
             filter group._key == @group
-                and (group.${f(Group::open)} == true or (@person != null && first(
-                    for x, member in outbound @person graph `${Member::class.graph()}`
-                        filter x._key == @group
-                            and member.${f(Member::gone)} != true
-                        limit 1
-                        return true
-                )) == true)
+                and (group.${f(Group::open)} == true ${
+                    if (person != null) {
+                        """
+                            or first(
+                                for x, member in outbound @person graph `${Member::class.graph()}`
+                                    filter x._key == @group
+                                        and member.${f(Member::gone)} != true
+                                    limit 1
+                                    return true
+                            ) == true
+                        """.trimIndent()
+                    } else ""
+                })
             limit 1
             return ${groupExtended()}
     """.trimIndent(),
-    mapOf(
-        "person" to person?.asId(Person::class),
-        "group" to group,
-    )
+    buildMap {
+        if (person != null) {
+            set("person", person.asId(Person::class))
+        }
+        set("group", group)
+    }
 ).firstOrNull()
 
 /**

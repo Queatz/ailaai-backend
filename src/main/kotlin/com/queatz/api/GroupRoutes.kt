@@ -70,6 +70,7 @@ fun Route.groupRoutes() {
                     }
 
                 db.openGroups(
+                    person = meOrNull?.id,
                     geo = geo,
                     search = search?.notBlank?.lowercase(),
                     public = public,
