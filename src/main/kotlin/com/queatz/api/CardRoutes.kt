@@ -1,12 +1,9 @@
 package com.queatz.api
 
-import com.queatz.TextPrompt
+import com.queatz.*
 import com.queatz.db.*
-import com.queatz.notBlank
-import com.queatz.parameter
 import com.queatz.plugins.*
 import com.queatz.push.*
-import com.queatz.receiveFile
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -324,6 +321,15 @@ fun Route.cardRoutes() {
                                     CollaborationEventDataDetails.Location
                                 )
                             }
+                            if (update.content != null && update.content != card.content) {
+                                notifyCardInCardUpdated(
+                                    person,
+                                    parentCard.people(),
+                                    parentCard,
+                                    card,
+                                    CollaborationEventDataDetails.Content
+                                )
+                            }
                         }
                     }
 
@@ -342,6 +348,9 @@ fun Route.cardRoutes() {
                         }
                         if (update.location != null && update.location != card.location) {
                             notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Location)
+                        }
+                        if (update.content != null && update.content != card.content) {
+                            notifyCardUpdated(person, card.people(), card, CollaborationEventDataDetails.Content)
                         }
                     }
 
@@ -370,6 +379,7 @@ fun Route.cardRoutes() {
                     }
                     check(Card::name)
                     check(Card::conversation)
+                    check(Card::content)
                     check(Card::options)
                     check(Card::photo) {
                         card.video = update.video
@@ -517,6 +527,28 @@ fun Route.cardRoutes() {
                         }
                     }
                 }
+            }
+        }
+
+        post("/cards/{id}/content/photos") {
+            respond {
+                val cardId = parameter("id")
+                var result: List<String>? = null
+                call.receiveFiles("photo", "card-content-${cardId}") { photosUrls, _ ->
+                    result = photosUrls
+                }
+                result ?: HttpStatusCode.InternalServerError
+            }
+        }
+
+        post("/cards/{id}/content/audio") {
+            respond {
+                val cardId = parameter("id")
+                var result: String? = null
+                call.receiveFile("audio", "card-content-${cardId}") { audioUrl, _ ->
+                    result = audioUrl
+                }
+                result ?: HttpStatusCode.InternalServerError
             }
         }
 
