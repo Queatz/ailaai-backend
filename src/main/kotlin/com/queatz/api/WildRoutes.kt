@@ -35,7 +35,7 @@ fun Route.wildRoutes() {
                         ?: return@respond HttpStatusCode.BadRequest.description("Person not found")
                 }
 
-                val people = listOf(wildPerson.id!!, card.person!!)
+                val people = listOf(wildPerson.id!!, card.person!!).distinct()
                 val group = db.group(people) ?: app.createGroup(people).let {
                     // todo translate
                     it.description =
