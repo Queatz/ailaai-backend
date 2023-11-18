@@ -447,10 +447,6 @@ fun Route.cardRoutes() {
                 } else if (card.person!!.asKey() != person.id) {
                     HttpStatusCode.Forbidden
                 } else {
-                    if (card.name.isNullOrBlank()) {
-                        return@respond HttpStatusCode.BadRequest.description("Missing card name")
-                    }
-
                     launch {
                         val url = ai.photo(
                             "card-${card.id!!}",

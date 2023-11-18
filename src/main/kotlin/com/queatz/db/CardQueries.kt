@@ -177,6 +177,7 @@ fun Db.explore(
             filter x.${f(Card::active)} == true
                 and (x.${f(Card::parent)} == null or @search != null) // When searching, include cards inside other cards
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
+                ${if (public) "and x.${f(Card::equipped)} != true" else ""}
                 and x.${f(Card::offline)} != true
                 ${if (person == null || public) "" else "and x.${f(Card::person)} != @personKey"}
                 and (
@@ -188,7 +189,7 @@ fun Db.explore(
                 )
             let d = x.${f(Card::geo)} == null ? null : distance(x.${f(Card::geo)}[0], x.${f(Card::geo)}[1], @geo[0], @geo[1])
             filter (
-                ${if (person == null || public) "d != null and d <= @nearbyMaxDistance" else isFriendCard(false)}
+                ${if (person == null || public) "d != null and d <= @nearbyMaxDistance" else isFriendCard()}
             )
             sort d == null, d
             limit @offset, @limit
@@ -216,7 +217,7 @@ fun Db.explore(
     }
 )
 
-fun Db.isFriendCard(onlyProfile: Boolean) = """(${if (onlyProfile) "x.${f(Card::equipped)} == true and " else ""}first(
+fun Db.isFriendCard() = """first(
 for group, myMember in outbound @person graph `${Member::class.graph()}`
     filter myMember.${f(Member::gone)} != true
     for friend, member in inbound group graph `${Member::class.graph()}`
@@ -224,7 +225,7 @@ for group, myMember in outbound @person graph `${Member::class.graph()}`
             and friend._key == x.${f(Card::person)}
         limit 1
         return true
-) == true)"""
+) == true"""
 
 fun Db.cards(geo: List<Double>, search: String? = null, offset: Int = 0, limit: Int = 20) = list(
     Card::class,

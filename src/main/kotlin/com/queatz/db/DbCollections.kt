@@ -107,5 +107,8 @@ fun collections() = listOf(
     JoinRequest::class.db {
         ensurePersistentIndex(listOf(JoinRequest::person.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(JoinRequest::group.name), PersistentIndexOptions())
+    },
+    Widget::class.db {
+        ensurePersistentIndex(listOf(Widget::person.name), PersistentIndexOptions())
     }
 )

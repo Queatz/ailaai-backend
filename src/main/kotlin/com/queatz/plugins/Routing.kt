@@ -10,6 +10,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.pipeline.*
 import kotlinx.coroutines.launch
+import java.io.File
 import kotlin.time.Duration.Companion.days
 
 fun Application.configureRouting() {
@@ -42,9 +43,9 @@ fun Application.configureRouting() {
         linkDeviceRoutes()
         pushRoutes()
         joinRequestRoutes()
+        widgetRoutes()
 
-        static("/static") {
-            files("static")
+        staticFiles("/static", File("static")) {
             install(CachingHeaders) {
                 options { _, outgoingContent ->
                     when (outgoingContent.contentType?.contentType) {
