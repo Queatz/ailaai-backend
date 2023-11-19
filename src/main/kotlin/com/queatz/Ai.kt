@@ -26,7 +26,15 @@ class Ai {
             "absolute_reality_1_8_1",
             "anything_5_0",
             "openniji",
-            "pastel_mix"
+            "pastel_mix",
+            "furrytoonmix",
+            "eimis_anime_diffusion_1",
+            "realistic_vision_5_1",
+            "toonify_2",
+            "blood_orange_mix",
+            "dreamix_1",
+            "abyss_orange_mix_2",
+            "stablediffusion_2_1_768px"
         )
         private const val height = 416
         private const val width = 608
