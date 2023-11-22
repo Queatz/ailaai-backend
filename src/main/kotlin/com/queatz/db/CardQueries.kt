@@ -22,6 +22,34 @@ fun Db.cardsOfPerson(person: String) = list(
 )
 
 /**
+ * @person The person to search
+ * @search The search string
+ */
+fun Db.activeCardsOfPerson(person: String, search: String?, offset: Int = 0, limit: Int = 20) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::person)} == @person
+                and x.${f(Card::active)} == true
+                and (@search == null or contains(lower(x.${f(Card::name)}), @search) or contains(lower(x.${f(Card::location)}), @search) or contains(lower(x.${f(Card::conversation)}), @search))
+            sort x.${f(Card::createdAt)} desc
+            limit @offset, @limit
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter (card.${f(Card::person)} == @person or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
+                }
+            )
+    """.trimIndent(),
+    mapOf(
+        "person" to person,
+        "search" to search?.lowercase(),
+        "offset" to offset,
+        "limit" to limit
+    )
+)
+
+/**
  * @person The person to fetch equipped cards for
  */
 fun Db.equippedCardsOfPerson(person: String, me: String?) = list(

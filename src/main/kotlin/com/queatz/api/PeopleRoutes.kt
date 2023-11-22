@@ -11,7 +11,6 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
 
 fun Route.peopleRoutes() {
 
@@ -54,7 +53,13 @@ fun Route.peopleRoutes() {
                 val person = db.document(Person::class, parameter("id"))
                     ?: return@respond HttpStatusCode.NotFound
 
-                db.equippedCardsOfPerson(person.id!!, meOrNull?.id)
+                val search = call.parameters["search"]
+
+                if (search?.notBlank == null) {
+                    db.equippedCardsOfPerson(person.id!!, meOrNull?.id)
+                } else {
+                    db.activeCardsOfPerson(person.id!!, search)
+                }
             }
         }
     }

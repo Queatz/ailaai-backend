@@ -33,8 +33,7 @@ class Ai {
             "toonify_2",
             "blood_orange_mix",
             "dreamix_1",
-            "abyss_orange_mix_2",
-            "stablediffusion_2_1_768px"
+            "abyss_orange_mix_2"
         )
         private const val height = 416
         private const val width = 608
@@ -53,11 +52,12 @@ class Ai {
     }
 
     suspend fun photo(prefix: String, prompts: List<TextPrompt>): String {
+        val model = defaultStylePresets.random()
         val body = json.encodeToString(
             DezgoPrompt(
                 prompt = prompts.joinToString { it.text },
                 negativePrompt = negativePrompt,
-                model = defaultStylePresets.random(),
+                model = model,
                 height = height,
                 width = width,
             )
@@ -71,7 +71,7 @@ class Ai {
             contentType(ContentType.Application.Json.withCharset(UTF_8))
             setBody(body)
         }.body<ByteArray>().let {
-            save(prefix, it)
+            save("$prefix-$model", it)
         }
     }
 
@@ -102,7 +102,7 @@ data class DezgoPrompt(
     val height: Int,
     val width: Int,
     val sampler: String? = "dpmpp_2m_karras",
-    val steps: Int = 20,
+    val steps: Int = 25,
     val guidance: Int = 7,
     val format: String = "jpg",
 )
