@@ -77,6 +77,7 @@ fun collections() = listOf(
         ensurePersistentIndex(listOf(Card::equipped.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::conversation.name), PersistentIndexOptions())
         ensurePersistentIndex(listOf(Card::offline.name), PersistentIndexOptions())
+        ensurePersistentIndex(listOf(Card::group.name), PersistentIndexOptions())
         ensureFulltextIndex(listOf(Card::conversation.name), FulltextIndexOptions())
         ensureGeoIndex(listOf(Card::geo.name), GeoIndexOptions())
     },

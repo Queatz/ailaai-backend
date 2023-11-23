@@ -41,7 +41,7 @@ class Ai {
             "lovely, beautiful, cute, happy, sweet, natural",
             .125
         )
-        private val negativePrompt = "ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurry, bad anatomy, blurred, watermark, grainy, signature, cut off, draft"
+        private val negativePrompt = "ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurry, bad anatomy, blurred, watermark, grainy, signature, cut off, draft, weapon"
     }
 
     private val http = HttpClient(CIO) {
@@ -55,7 +55,7 @@ class Ai {
         val model = defaultStylePresets.random()
         val body = json.encodeToString(
             DezgoPrompt(
-                prompt = prompts.joinToString { it.text },
+                prompt = (prompts + basePrompt).joinToString { it.text },
                 negativePrompt = negativePrompt,
                 model = model,
                 height = height,

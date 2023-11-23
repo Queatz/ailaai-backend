@@ -35,7 +35,6 @@ fun Route.groupRoutes() {
             }
         }
 
-
         get("/groups/{id}/messages") {
             respond {
                 db.group(meOrNull?.id, parameter("id"))?.let {
@@ -45,6 +44,13 @@ fun Route.groupRoutes() {
                         call.parameters["limit"]?.toInt() ?: 20
                     )
                 } ?: HttpStatusCode.NotFound
+            }
+        }
+
+        get("/groups/{id}/cards") {
+            respond {
+                db.group(meOrNull?.id, parameter("id")) ?: return@respond HttpStatusCode.NotFound
+                db.cardsOfGroup(meOrNull?.id, parameter("id"))
             }
         }
 
@@ -257,7 +263,6 @@ fun Route.groupRoutes() {
         }
     }
 }
-
 
 fun List<GroupExtended>.forApi() = onEach {
     it.forApi()

@@ -74,6 +74,29 @@ fun Db.equippedCardsOfPerson(person: String, me: String?) = list(
 )
 
 /**
+ * @me The current user
+ */
+fun Db.cardsOfGroup(me: String?, group: String) = list(
+    Card::class,
+    """
+        for x in @@collection
+            filter x.${f(Card::group)} == @group
+                and (x.${f(Card::person)} == @me or x.${f(Card::active)} == true)
+            sort x.${f(Card::createdAt)} desc
+            return merge(
+                x,
+                {
+                    cardCount: count(for card in @@collection filter ((@me != null && card.${f(Card::person)} == @me) or card.${f(Card::active)} == true) && card.${f(Card::parent)} == x._key return true)
+                }
+            )
+    """.trimIndent(),
+    mapOf(
+        "me" to me,
+        "group" to group,
+    )
+)
+
+/**
  * @person The current user
  */
 fun Db.collaborationsOfPerson(person: String) = list(

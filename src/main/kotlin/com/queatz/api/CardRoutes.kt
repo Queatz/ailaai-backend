@@ -372,11 +372,6 @@ fun Route.cardRoutes() {
                     check(Card::location)
                     check(Card::collaborators)
                     check(Card::categories)
-                    check(Card::offline) {
-                        card.parent = update.parent
-                        card.equipped = update.equipped
-                        card.geo = update.geo
-                    }
                     check(Card::name)
                     check(Card::conversation)
                     check(Card::content)
@@ -387,13 +382,28 @@ fun Route.cardRoutes() {
                     check(Card::video) {
                         card.photo = update.photo
                     }
+                    check(Card::offline) {
+                        card.parent = update.parent
+                        card.equipped = update.equipped
+                        card.geo = update.geo
+                        card.group = update.group
+                    }
                     check(Card::parent) {
                         card.equipped = update.equipped
                         card.offline = update.offline
+                        card.geo = update.geo
+                        card.group = update.group
                     }
                     check(Card::equipped) {
                         card.parent = update.parent
                         card.offline = update.offline
+                        card.group = update.group
+                    }
+                    check(Card::group) {
+                        card.parent = update.parent
+                        card.offline = update.offline
+                        card.geo = update.geo
+                        card.equipped = update.equipped
                     }
 
                     if (card.parent == null && previousParent != null && card.active == true) {
