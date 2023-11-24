@@ -132,6 +132,10 @@ fun Route.groupRoutes() {
                         group.description = groupUpdated.description
                     }
 
+                    if (groupUpdated.categories != null) {
+                        group.categories = groupUpdated.categories
+                    }
+
                     if (member.host == true) {
                         if (groupUpdated.open != null) {
                             group.open = groupUpdated.open

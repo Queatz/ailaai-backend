@@ -26,6 +26,7 @@ fun Application.configureRouting() {
         signRoutes()
         meRoutes()
         cardRoutes()
+        categoryRoutes()
         groupRoutes()
         peopleRoutes()
         reminderRoutes()

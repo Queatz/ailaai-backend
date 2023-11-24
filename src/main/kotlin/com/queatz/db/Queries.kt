@@ -378,6 +378,23 @@ fun Db.groups(person: String) = query(
 )
 
 /**
+ * @person The current user
+ */
+fun Db.groupsPlain(person: String) = query(
+    Group::class,
+    """
+        for group, edge in outbound @person graph `${Member::class.graph()}`
+            filter edge.${f(Member::hide)} != true
+                and edge.${f(Member::gone)} != true
+            sort group.${f(Group::seen)} desc
+            return group
+    """.trimIndent(),
+    mapOf(
+        "person" to person.asId(Person::class)
+    )
+)
+
+/**
  * @geo The geo to bias for
  * @search Search query
  */

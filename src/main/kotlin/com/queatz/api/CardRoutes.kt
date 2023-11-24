@@ -77,31 +77,6 @@ fun Route.cardRoutes() {
     }
 
     authenticate {
-        get("/categories") {
-            respond {
-                val geo = call.parameters["geo"]!!.split(",").map { it.toDouble() }
-
-                if (geo.size != 2) {
-                    return@respond HttpStatusCode.BadRequest.description("'geo' must be an array of size 2")
-                }
-
-                val person = me
-
-                (db.explore(
-                    person = person.id!!,
-                    geo = geo,
-                    search = call.parameters["search"]?.notBlank,
-                    nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
-                    offset = call.parameters["offset"]?.toInt() ?: 0,
-                    limit = call.parameters["limit"]?.toInt() ?: 20
-                ) + db.cardsOfPerson(me.id!!)).flatMap {
-                    it.categories ?: emptyList()
-                }
-                    .distinct()
-                    .sorted()
-            }
-        }
-
         post("/cards") {
             respond {
                 val person = me
@@ -115,7 +90,9 @@ fun Route.cardRoutes() {
                     return@respond HttpStatusCode.BadRequest.description("Card cannot be equipped and have a parent")
                 }
 
-                if (parentCard?.isMineOrIAmCollaborator(me) == false) {
+                if (card.group != null && db.member(me.id!!, card.group!!) == null) {
+                    HttpStatusCode.Forbidden.description("Not a member of this group")
+                } else if (parentCard?.isMineOrIAmCollaborator(me) == false) {
                     HttpStatusCode.Forbidden.description("Not a collaborator on this parent")
                 } else {
                     if (card.parent == null && card.equipped == null && card.geo == null) {
@@ -126,13 +103,17 @@ fun Route.cardRoutes() {
                         Card(
                             person.id!!,
                             name = card.name,
+                            location = card.location,
                             conversation = card.conversation,
+                            categories = card.categories,
                             options = card.options,
                             parent = parentCard?.id,
                             equipped = card.equipped,
                             offline = card.offline,
+                            group = card.group,
                             geo = card.geo,
-                            active = false
+                            content = card.content,
+                            active = card.active ?: false
                         )
                     )
                 }
@@ -184,8 +165,12 @@ fun Route.cardRoutes() {
                             ?: return@respond HttpStatusCode.NotFound.description("Parent card not found")
 
                         if (!parent.isMineOrIAmCollaborator(me)) {
-                            return@respond HttpStatusCode.Forbidden
+                            return@respond HttpStatusCode.Forbidden.description("Not a collaborator on this card")
                         }
+                    }
+
+                    if (card.group != null && db.member(me.id!!, card.group!!) == null) {
+                        return@respond HttpStatusCode.Forbidden.description("Not a member of this group")
                     }
 
                     if (update.parent != null && update.equipped == true) {
@@ -386,24 +371,27 @@ fun Route.cardRoutes() {
                         card.parent = update.parent
                         card.equipped = update.equipped
                         card.geo = update.geo
-                        card.group = update.group
+                        card.group = null
                     }
                     check(Card::parent) {
                         card.equipped = update.equipped
                         card.offline = update.offline
                         card.geo = update.geo
-                        card.group = update.group
+                        card.group = null
                     }
                     check(Card::equipped) {
                         card.parent = update.parent
                         card.offline = update.offline
-                        card.group = update.group
+                        card.group = null
                     }
-                    check(Card::group) {
-                        card.parent = update.parent
-                        card.offline = update.offline
-                        card.geo = update.geo
-                        card.equipped = update.equipped
+
+                    if (card.group != null) {
+                        check(Card::group) {
+                            card.parent = update.parent
+                            card.offline = update.offline
+                            card.geo = update.geo
+                            card.equipped = update.equipped
+                        }
                     }
 
                     if (card.parent == null && previousParent != null && card.active == true) {
