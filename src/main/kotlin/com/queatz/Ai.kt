@@ -33,7 +33,10 @@ class Ai {
             "toonify_2",
             "blood_orange_mix",
             "dreamix_1",
-            "abyss_orange_mix_2"
+            "abyss_orange_mix_2",
+            "duchaiten_anime",
+            "duchaiten_dreamworld",
+            "icbinp_seco"
         )
         private const val height = 416
         private const val width = 608

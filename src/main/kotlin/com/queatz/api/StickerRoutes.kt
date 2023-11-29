@@ -62,9 +62,9 @@ fun Route.stickerRoutes() {
                     name = newStickerPack.name
                     description = newStickerPack.description
                     person = me.id!!
+                }.let {
+                    db.insert(it)
                 }
-
-                db.insert(stickerPack)
                 db.stickerPackWithStickers(stickerPack.id!!)!!
             }
         }

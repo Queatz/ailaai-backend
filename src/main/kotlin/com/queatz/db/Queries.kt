@@ -649,6 +649,31 @@ fun Db.group(people: List<String>) = one(
     )
 )
 
+/**
+ * @people The current user
+ * @exact Whether to return only groups with exactly these members
+ *
+ * @return All groups containing all the people
+ */
+fun Db.groupsWith(people: List<String>, exact: Boolean = false) = query(
+    GroupExtended::class,
+    """
+        for group in `${Group::class.collection()}`
+            let members = (
+                for person, edge in inbound group graph `${Member::class.graph()}`
+                    filter edge.${f(Member::gone)} != true
+                    return edge._from
+            )
+            filter @people all in members
+                ${if (exact) "and count(@people) == count(members)" else ""}
+            sort count(members), group.${f(Group::seen)} desc
+            return ${groupExtended()}
+    """.trimIndent(),
+    mapOf(
+        "people" to people.map { it.asId(Person::class) }
+    )
+)
+
 fun Db.messages(group: String, before: Instant? = null, limit: Int = 20) = list(
     Message::class,
     """

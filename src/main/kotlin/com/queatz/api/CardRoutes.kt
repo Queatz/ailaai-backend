@@ -95,7 +95,7 @@ fun Route.cardRoutes() {
                 } else if (parentCard?.isMineOrIAmCollaborator(me) == false) {
                     HttpStatusCode.Forbidden.description("Not a collaborator on this parent")
                 } else {
-                    if (card.parent == null && card.equipped == null && card.geo == null) {
+                    if (card.parent == null && card.equipped == null && card.geo == null && card.group == null) {
                         card.offline = true
                     }
 
@@ -385,13 +385,11 @@ fun Route.cardRoutes() {
                         card.group = null
                     }
 
-                    if (card.group != null) {
-                        check(Card::group) {
-                            card.parent = update.parent
-                            card.offline = update.offline
-                            card.geo = update.geo
-                            card.equipped = update.equipped
-                        }
+                    check(Card::group) {
+                        card.parent = update.parent
+                        card.offline = update.offline
+                        card.geo = update.geo
+                        card.equipped = update.equipped
                     }
 
                     if (card.parent == null && previousParent != null && card.active == true) {

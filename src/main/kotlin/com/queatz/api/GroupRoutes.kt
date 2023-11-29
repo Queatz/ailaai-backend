@@ -114,6 +114,20 @@ fun Route.groupRoutes() {
             }
         }
 
+        post("/groups/search") {
+            respond {
+                call.receive<SearchGroupBody>().let {
+                    val people = (it.people + me.id!!).toSet().toList()
+
+                    if (people.size > 50) {
+                        HttpStatusCode.BadRequest.description("Too many people")
+                    } else {
+                        db.groupsWith(people)
+                    }
+                }
+            }
+        }
+
         post("/groups/{id}") {
             respond {
                 val groupUpdated = call.receive<Group>()
