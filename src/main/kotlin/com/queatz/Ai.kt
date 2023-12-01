@@ -36,7 +36,8 @@ class Ai {
             "abyss_orange_mix_2",
             "duchaiten_anime",
             "duchaiten_dreamworld",
-            "icbinp_seco"
+            "icbinp_seco",
+            "something_2"
         )
         private const val height = 416
         private const val width = 608

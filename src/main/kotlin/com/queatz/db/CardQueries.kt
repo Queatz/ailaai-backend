@@ -217,6 +217,7 @@ fun Db.explore(
     person: String?,
     geo: List<Double>,
     search: String? = null,
+    paid: Boolean? = null,
     nearbyMaxDistance: Double = 0.0,
     offset: Int = 0,
     limit: Int = 20,
@@ -229,6 +230,7 @@ fun Db.explore(
                 and (x.${f(Card::parent)} == null or @search != null) // When searching, include cards inside other cards
                 and (x.${f(Card::geo)} != null or @search != null) // When searching, include cards inside other cards
                 ${if (public) "and x.${f(Card::equipped)} != true" else ""}
+                ${if (paid != null) "and x.${f(Card::pay)} ${if (paid) "!=" else "=="} null" else ""}
                 and x.${f(Card::offline)} != true
                 ${if (person == null || public) "" else "and x.${f(Card::person)} != @personKey"}
                 and (

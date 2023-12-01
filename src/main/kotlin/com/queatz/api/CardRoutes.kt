@@ -63,10 +63,13 @@ fun Route.cardRoutes() {
                         )
                     }
 
+                val paid = call.parameters["paid"]?.toBoolean()
+
                 db.explore(
                     person = person?.id,
                     geo = geo,
                     search = search,
+                    paid = paid,
                     nearbyMaxDistance = defaultNearbyMaxDistanceInMeters,
                     offset = call.parameters["offset"]?.toInt() ?: 0,
                     limit = call.parameters["limit"]?.toInt() ?: 20,
@@ -104,6 +107,7 @@ fun Route.cardRoutes() {
                             person.id!!,
                             name = card.name,
                             location = card.location,
+                            pay = card.pay,
                             conversation = card.conversation,
                             categories = card.categories,
                             options = card.options,
@@ -361,6 +365,11 @@ fun Route.cardRoutes() {
                     check(Card::conversation)
                     check(Card::content)
                     check(Card::options)
+                    check(Card::pay) {
+                        if (it?.pay.isNullOrBlank()) {
+                            card.pay = null
+                        }
+                    }
                     check(Card::photo) {
                         card.video = update.video
                     }

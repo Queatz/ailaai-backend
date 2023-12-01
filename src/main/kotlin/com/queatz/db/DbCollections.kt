@@ -111,5 +111,8 @@ fun collections() = listOf(
     },
     Widget::class.db {
         ensurePersistentIndex(listOf(Widget::person.name), PersistentIndexOptions())
+    },
+    Item::class.db {
+
     }
 )
